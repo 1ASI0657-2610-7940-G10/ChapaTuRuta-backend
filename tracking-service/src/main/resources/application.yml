@@ -17,3 +17,14 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+
+    mapbox:
+      api-key: ${MAPBOX_API_KEY}
+
+    spring:
+      rabbitmq:
+        template:
+          default-receive-queue: tracking.queue
+          exchange: tracking.exchange
+          routing-key: tracking.routing.key

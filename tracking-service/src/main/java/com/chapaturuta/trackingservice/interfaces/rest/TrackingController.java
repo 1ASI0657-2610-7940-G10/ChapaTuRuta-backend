@@ -35,10 +35,14 @@ public class TrackingController {
 
     // FLUJO QUERY (Lectura)
     @GetMapping("/eta/{routeId}")
-    @Operation(summary = "Consultar ETA de una ruta", description = "Lectura ultrarrápida desde Redis para los pasajeros")
-    public ResponseEntity<EtaQueryResponse> getEta(@PathVariable UUID routeId) {
+    @Operation(summary = "Consultar ETA de una ruta", description = "Lectura ultrarrápida desde Redis y cálculo de ETA real con Google Maps")
+    public ResponseEntity<EtaQueryResponse> getEta(
+            @PathVariable UUID routeId,
+            @RequestParam Double pasajeroLat,
+            @RequestParam Double pasajeroLng) {
         try {
-            EtaQueryResponse response = queryService.getRouteEta(routeId);
+            // Ahora le pasamos las coordenadas del pasajero al servicio para que Google Maps calcule la distancia real
+            EtaQueryResponse response = queryService.getRouteEta(routeId, pasajeroLat, pasajeroLng);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
