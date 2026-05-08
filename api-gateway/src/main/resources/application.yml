@@ -1,0 +1,31 @@
+server:
+  port: 9000 # El Gateway será la puerta de entrada principal en el puerto 9000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+      routes:
+        # Ruta hacia el Identity Service (Puerto 8080)
+        - id: identity-service
+          uri: http://localhost:8080
+          predicates:
+            - Path=/api/v1/auth/**
+
+        # Ruta hacia el Routing Service (Puerto 8081)
+        - id: routing-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/routes/**
