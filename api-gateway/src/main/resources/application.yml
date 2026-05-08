@@ -1,5 +1,5 @@
 server:
-  port: 9000 # El Gateway será la puerta de entrada principal en el puerto 9000
+  port: 9000 # El Gateway serï¿½ la puerta de entrada principal en el puerto 9000
 
 spring:
   application:
@@ -29,3 +29,9 @@ spring:
           uri: http://localhost:8081
           predicates:
             - Path=/api/v1/routes/**
+
+        # Ruta hacia el Tracking Service (Puerto 8082)
+        - id: tracking-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/tracking/**
