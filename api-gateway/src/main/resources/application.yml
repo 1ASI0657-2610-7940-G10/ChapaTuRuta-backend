@@ -1,37 +1,36 @@
 server:
-  port: 9000 # El Gateway ser� la puerta de entrada principal en el puerto 9000
+  port: 9000
 
 spring:
   application:
     name: api-gateway
   cloud:
     gateway:
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*"
-      routes:
-        # Ruta hacia el Identity Service (Puerto 8080)
-        - id: identity-service
-          uri: http://localhost:8080
-          predicates:
-            - Path=/api/v1/auth/**
+      server:
+        webflux: # <-- ESTO ES LO NUEVO QUE PIDE SPRING
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: "*"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+          routes:
+            - id: identity-service
+              uri: http://localhost:8080
+              predicates:
+                - Path=/api/v1/auth/**
 
-        # Ruta hacia el Routing Service (Puerto 8081)
-        - id: routing-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/v1/routes/**
+            - id: routing-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/routes/**
 
-        # Ruta hacia el Tracking Service (Puerto 8082)
-        - id: tracking-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/v1/tracking/**
+            - id: tracking-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/v1/tracking/**, /api/v1/demand/**

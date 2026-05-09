@@ -4,27 +4,26 @@ server:
 spring:
   application:
     name: tracking-service
+
   data:
     redis:
       host: localhost
       port: 6379
+
   rabbitmq:
     host: localhost
     port: 5672
+    template:
+      default-receive-queue: tracking.queue
+      exchange: tracking.exchange
+      routing-key: tracking.routing.key
 
 springdoc:
   api-docs:
     path: /api-docs
+
   swagger-ui:
     path: /swagger-ui.html
 
-
-    mapbox:
-      api-key: ${MAPBOX_API_KEY}
-
-    spring:
-      rabbitmq:
-        template:
-          default-receive-queue: tracking.queue
-          exchange: tracking.exchange
-          routing-key: tracking.routing.key
+mapbox:
+  api-key: pk.eyJ1IjoiamhlY3RvcjYzMiIsImEiOiJjbW94amR0Y2QwMXh6MnFvaDhraGI1ZTMwIn0.V6nopXP1B4xIiI9wFwCuiw

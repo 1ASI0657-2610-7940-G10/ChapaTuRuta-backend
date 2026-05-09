@@ -2,10 +2,8 @@ package com.chapaturuta.identity.infrastructure.persistence;
 
 import com.chapaturuta.identity.domain.model.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -26,6 +24,7 @@ public class UserEntity {
 
     @Column(nullable = false, unique = true, length = 150)
     private String email;
+
 
     @Column(nullable = false)
     private String password;
