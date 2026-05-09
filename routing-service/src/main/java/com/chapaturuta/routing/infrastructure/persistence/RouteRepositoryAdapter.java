@@ -31,7 +31,6 @@ public class RouteRepositoryAdapter implements RouteRepository {
         return toModel(saved);
     }
 
-    // Convertir de Entity (base de datos) a Model (dominio)
     private Route toModel(RouteEntity entity) {
         return Route.builder()
                 .id(entity.getId())
@@ -42,7 +41,6 @@ public class RouteRepositoryAdapter implements RouteRepository {
                 .build();
     }
 
-    // Convertir de Model (dominio) a Entity (base de datos)
     private RouteEntity toEntity(Route route) {
         return RouteEntity.builder()
                 .id(route.getId())

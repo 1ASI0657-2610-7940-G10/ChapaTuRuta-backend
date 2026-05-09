@@ -8,14 +8,14 @@ import lombok.Data;
 @Data
 public class DistrictEntity {
     @Id
-    private Long id; // Ej: 150101 (Ubigeo)
+    private Long id;
 
     @Column(nullable = false)
-    private String name; // Ej: San Juan de Lurigancho
+    private String name;
 
     @Column(nullable = false)
-    private String province; // Ej: Lima
+    private String province;
 
     @Column(nullable = false)
-    private String region; // Ej: Lima Metropolitana
+    private String region;
 }

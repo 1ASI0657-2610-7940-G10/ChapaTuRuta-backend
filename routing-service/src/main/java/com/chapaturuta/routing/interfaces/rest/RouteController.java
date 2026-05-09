@@ -20,7 +20,6 @@ public class RouteController {
             @RequestParam String origin,
             @RequestParam String destination
     ) {
-        // CORREGIDO: cambiar .execute() por .searchAvailableRoutes()
         List<RouteResponse> routes = searchRoutesUseCase.searchAvailableRoutes(origin, destination);
         return ResponseEntity.ok(routes);
     }

@@ -14,13 +14,13 @@ public class StopEntity {
     private UUID id;
 
     @Column(nullable = false, length = 100)
-    private String name; // Ej: "Paradero Óvalo Santa Anita"
+    private String name;
 
     @Column(nullable = false, length = 200)
-    private String address; // Ej: "Cruce Carretera Central con Vía de Evitamiento"
+    private String address;
 
     @Column(length = 200)
-    private String reference; // Ej: "Frente al Mall Aventura"
+    private String reference;
 
     @Column(nullable = false)
     private Double latitude;
@@ -28,7 +28,6 @@ public class StopEntity {
     @Column(nullable = false)
     private Double longitude;
 
-    // Relación con el distrito
     @ManyToOne
     @JoinColumn(name = "district_id", nullable = false)
     private DistrictEntity district;
