@@ -27,7 +27,6 @@ public class DemandController {
 
         String key = "stop:" + stopId + ":passenger:" + passengerId;
 
-        // El pasajero se guarda en Redis y se ELIMINA AUTOMÁTICAMENTE a los 2 minutos (Timeout exigido)
         redisTemplate.opsForValue().set(key, "waiting", Duration.ofMinutes(2));
 
         return ResponseEntity.ok("Pasajero registrado en la cola de espera del paradero");
@@ -41,7 +40,6 @@ public class DemandController {
 
         String key = "stop:" + stopId + ":passenger:" + passengerId;
 
-        // Verificamos si aún está en la lista (si no pasaron los 2 minutos)
         if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
             redisTemplate.delete(key); // Lo quitamos porque ya subió
             return ResponseEntity.ok("Abordaje confirmado exitosamente");
@@ -53,7 +51,6 @@ public class DemandController {
     @GetMapping("/count/{stopId}")
     @Operation(summary = "Obtener nivel de concurrencia", description = "Retorna cuántas personas están esperando en un paradero")
     public ResponseEntity<Integer> getDemandCount(@PathVariable UUID stopId) {
-        // Busca en Redis cuántos pasajeros tienen llaves activas en ese paradero
         int count = redisTemplate.keys("stop:" + stopId + ":passenger:*").size();
         return ResponseEntity.ok(count);
     }

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class NotificationWorker {
 
-    // Este método está "escuchando" constantemente a RabbitMQ en segundo plano
     @RabbitListener(queues = "tracking.queue")
     public void processCheckInEvent(String eventMessage) {
         System.out.println("Worker recibió el evento: " + eventMessage);

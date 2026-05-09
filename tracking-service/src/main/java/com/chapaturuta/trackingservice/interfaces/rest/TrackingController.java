@@ -25,7 +25,6 @@ public class TrackingController {
         this.queryService = queryService;
     }
 
-    // FLUJO COMMAND (Escritura)
     @PostMapping("/check-in")
     @Operation(summary = "Registrar Check-in del Conductor", description = "Guarda ubicación en Redis y dispara evento RabbitMQ")
     public ResponseEntity<String> registerCheckIn(@RequestBody CheckInCommand command) {
@@ -33,7 +32,6 @@ public class TrackingController {
         return new ResponseEntity<>("Check-in procesado asíncronamente", HttpStatus.ACCEPTED);
     }
 
-    // FLUJO QUERY (Lectura)
     @GetMapping("/eta/{routeId}")
     @Operation(summary = "Consultar ETA de una ruta", description = "Lectura ultrarrápida desde Redis y cálculo de ETA real con Google Maps")
     public ResponseEntity<EtaQueryResponse> getEta(
@@ -41,7 +39,6 @@ public class TrackingController {
             @RequestParam Double pasajeroLat,
             @RequestParam Double pasajeroLng) {
         try {
-            // Ahora le pasamos las coordenadas del pasajero al servicio para que Google Maps calcule la distancia real
             EtaQueryResponse response = queryService.getRouteEta(routeId, pasajeroLat, pasajeroLng);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {

@@ -17,12 +17,11 @@ public class TrackingCommandService {
     }
 
     public void processCheckIn(CheckInCommand command) {
-        // 1. Guarda en Redis (Alta velocidad)
         String key = "route:" + command.routeId() + ":location";
         String value = command.latitude() + "," + command.longitude();
         redisTemplate.opsForValue().set(key, value);
 
-        // 2. Publica Evento Asíncrono en RabbitMQ para notificar pasajeros sin bloquear al conductor
+
         String eventMessage = "Check-In registrado para ruta: " + command.routeId();
         rabbitTemplate.convertAndSend("tracking.exchange", "tracking.routing.key", eventMessage);
     }
