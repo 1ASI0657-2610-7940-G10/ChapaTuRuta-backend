@@ -6,37 +6,38 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      server:
-        webflux:
-          globalcors:
-            cors-configurations:
-              '[/**]':
-                allowedOrigins: "*"
-                allowedMethods:
-                  - GET
-                  - POST
-                  - PUT
-                  - DELETE
-                  - OPTIONS
-                allowedHeaders: "*"
-          routes:
-            - id: identity-service
-              uri: ${IDENTITY_SERVICE_URL:http://localhost:8080}
-              predicates:
-                - Path=/api/v1/auth/**
-              filters:
-                - JwtAuthentication # Aplica el filtro de seguridad a esta ruta
+      # 1. Configuración global de CORS directamente bajo "gateway"
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
 
-            - id: routing-service
-              uri: ${ROUTING_SERVICE_URL:http://localhost:8081}
-              predicates:
-                - Path=/api/v1/routes/**
-              filters:
-                - JwtAuthentication
+      # 2. Lista de rutas directamente bajo "gateway"
+      routes:
+        - id: identity-service
+          uri: ${IDENTITY_SERVICE_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - JwtAuthentication # Ahora sí encontrará el bean de tu filtro correctamente
 
-            - id: tracking-service
-              uri: ${TRACKING_SERVICE_URL:http://localhost:8082}
-              predicates:
-                - Path=/api/v1/tracking/**, /api/v1/demand/**
-              filters:
-                - JwtAuthentication
+        - id: routing-service
+          uri: ${ROUTING_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/routes/**
+          filters:
+            - JwtAuthentication
+
+        - id: tracking-service
+          uri: ${TRACKING_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/tracking/**, /api/v1/demand/**
+          filters:
+            - JwtAuthentication
