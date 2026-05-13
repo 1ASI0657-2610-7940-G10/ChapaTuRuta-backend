@@ -1,5 +1,4 @@
 server:
-  # Render inyecta su propio puerto dinámicamente en la variable PORT
   port: ${PORT:9000}
 
 spring:
@@ -21,7 +20,7 @@ spring:
                   - OPTIONS
                 allowedHeaders: "*"
           routes:
-            # Usamos variables para que el Gateway sepa a qué URL de Render redirigir el tráfico
+            # En local usará localhost, en Render inyectarás las URLs públicas de tus otros servicios
             - id: identity-service
               uri: ${IDENTITY_SERVICE_URL:http://localhost:8080}
               predicates:
