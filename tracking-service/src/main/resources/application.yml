@@ -7,7 +7,7 @@ spring:
 
   data:
     redis:
-      # Conexión directa a tu instancia de Upstash Redis en la nube
+      # Conexion directa a tu instancia de Upstash Redis en la nube
       host: ${REDIS_HOST:perfect-spider-122585.upstash.io}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:gQAAAAAAAd7ZAAIgcDJkMzdlZjI3ZTkwZDE0YTAzOGUwODJlMTA1OGM1MjljOQ}
@@ -15,7 +15,7 @@ spring:
         enabled: ${REDIS_SSL:true} # Obligatorio para Upstash
 
   rabbitmq:
-    # Conexión directa a tu instancia de CloudAMQP en la nube
+    # Conexion directa a tu instancia de CloudAMQP en la nube
     host: ${RABBITMQ_HOST:jaragua.lmq.cloudamqp.com}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:jdqimjrx}

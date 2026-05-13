@@ -20,7 +20,7 @@ spring:
                   - OPTIONS
                 allowedHeaders: "*"
           routes:
-            # En local usará localhost, en Render inyectarás las URLs públicas de tus otros servicios
+            # En local usara localhost, en Render inyectaras las URLs publicas de tus otros servicios
             - id: identity-service
               uri: ${IDENTITY_SERVICE_URL:http://localhost:8080}
               predicates:
