@@ -7,10 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Component
-public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAuthenticationFilter.Config> {
-
-    public JwtAuthenticationFilter() { super(Config.class); }
-
+public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilterFactory<JwtAuthenticationGatewayFilterFactory.Config> {
+    public JwtAuthenticationGatewayFilterFactory() { super(Config.class); }
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {

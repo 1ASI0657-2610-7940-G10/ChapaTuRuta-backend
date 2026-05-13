@@ -16,3 +16,8 @@ VALUES ('22222222-2222-2222-2222-222222222222', 'Óvalo Santa Anita', 'Carretera
 INSERT INTO stops (id, name, address, reference, latitude, longitude, district_id)
 VALUES ('33333333-3333-3333-3333-333333333333', 'Puente Nuevo', 'Vía de Evitamiento', 'Paradero dirección Sur', -12.0305, -76.9945, 150101)
     ON CONFLICT DO NOTHING;
+
+-- Poblar Rutas de Prueba
+INSERT INTO routes (id, origin_district, destination_district, price, duration_min)
+VALUES ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'Ate', 'Cercado de Lima', 3.50, 45)
+    ON CONFLICT DO NOTHING;
