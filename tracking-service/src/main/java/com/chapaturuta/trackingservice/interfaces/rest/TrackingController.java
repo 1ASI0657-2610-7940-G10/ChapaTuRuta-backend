@@ -1,9 +1,11 @@
 package com.chapaturuta.trackingservice.interfaces.rest;
 
 import com.chapaturuta.trackingservice.application.dto.CheckInCommand;
+import com.chapaturuta.trackingservice.application.dto.CheckInRequest;
 import com.chapaturuta.trackingservice.application.dto.EtaQueryResponse;
 import com.chapaturuta.trackingservice.application.usecase.TrackingCommandService;
 import com.chapaturuta.trackingservice.application.usecase.TrackingQueryService;
+import com.chapaturuta.trackingservice.domain.valueobject.CoordenadasGPS;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -27,9 +29,25 @@ public class TrackingController {
 
     @PostMapping("/check-in")
     @Operation(summary = "Registrar Check-in del Conductor", description = "Guarda ubicación en Redis y dispara evento RabbitMQ")
-    public ResponseEntity<String> registerCheckIn(@RequestBody CheckInCommand command) {
-        commandService.processCheckIn(command);
-        return new ResponseEntity<>("Check-in procesado asíncronamente", HttpStatus.ACCEPTED);
+    public ResponseEntity<String> registerCheckIn(@RequestBody CheckInRequest request) {
+        try {
+            // Se valida automáticamente al instanciar el Value Object
+            CoordenadasGPS gps = new CoordenadasGPS(request.latitude(), request.longitude());
+
+            CheckInCommand command = new CheckInCommand(
+                    request.driverId(),
+                    request.routeId(),
+                    request.stopId(),
+                    gps,
+                    request.timestamp()
+            );
+
+            commandService.processCheckIn(command);
+            return new ResponseEntity<>("Check-in procesado asíncronamente", HttpStatus.ACCEPTED);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+        }
     }
 
     @GetMapping("/eta/{routeId}")

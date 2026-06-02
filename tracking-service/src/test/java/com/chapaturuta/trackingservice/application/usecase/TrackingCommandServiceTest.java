@@ -1,6 +1,7 @@
 package com.chapaturuta.trackingservice.application.usecase;
 
 import com.chapaturuta.trackingservice.application.dto.CheckInCommand;
+import com.chapaturuta.trackingservice.domain.valueobject.CoordenadasGPS;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,16 +32,17 @@ class TrackingCommandServiceTest {
     private TrackingCommandService trackingCommandService;
 
     private CheckInCommand checkInCommand;
+    private long testTimestamp;
 
     @BeforeEach
     void setUp() {
+        testTimestamp = System.currentTimeMillis();
         checkInCommand = new CheckInCommand(
                 UUID.randomUUID(),
                 UUID.randomUUID(),
-                UUID.randomUUID(), // stopId (Simulamos que llegó a un paradero)
-                -12.0435,
-                -76.9532,
-                System.currentTimeMillis()
+                UUID.randomUUID(), // stopId simulado
+                new CoordenadasGPS(-12.0435, -76.9532),
+                testTimestamp
         );
     }
 
@@ -54,7 +56,8 @@ class TrackingCommandServiceTest {
         String expectedValue = "-12.0435,-76.9532";
         verify(valueOperations, times(1)).set(expectedKey, expectedValue);
 
-        String expectedMessage = "Check-In registrado para ruta: " + checkInCommand.routeId();
+        // Se valida con el nuevo formato implementado para manejo offline
+        String expectedMessage = checkInCommand.routeId() + "," + testTimestamp;
         verify(rabbitTemplate, times(1)).convertAndSend(
                 "tracking.exchange",
                 "tracking.routing.key",

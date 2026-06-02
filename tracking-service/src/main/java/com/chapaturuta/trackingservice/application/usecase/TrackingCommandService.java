@@ -20,7 +20,7 @@ public class TrackingCommandService {
 
     public void processCheckIn(CheckInCommand command) {
         String key = "route:" + command.routeId() + ":location";
-        String value = command.latitude() + "," + command.longitude();
+        String value = command.coordenadas().latitude() + "," + command.coordenadas().longitude();
         redisTemplate.opsForValue().set(key, value);
 
         if (command.stopId() != null) {

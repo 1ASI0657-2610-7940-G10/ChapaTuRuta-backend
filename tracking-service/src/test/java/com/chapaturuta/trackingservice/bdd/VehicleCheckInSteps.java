@@ -2,6 +2,7 @@ package com.chapaturuta.trackingservice.bdd;
 
 import com.chapaturuta.trackingservice.application.dto.CheckInCommand;
 import com.chapaturuta.trackingservice.application.usecase.TrackingCommandService;
+import com.chapaturuta.trackingservice.domain.valueobject.CoordenadasGPS;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -34,11 +35,18 @@ public class VehicleCheckInSteps {
     private CheckInCommand command;
     private Exception caughtException;
     private ValueOperations<String, String> valueOperationsMock;
+    private long testTimestamp;
 
     @Given("an active driver transmits check-in coordinates latitude {double} and longitude {double} for a route")
     public void prepareCheckInCommand(double latitude, double longitude) {
-        // Pasamos null al stopId para simular un check-in intermedio (sin auto-abordaje en este test específico)
-        command = new CheckInCommand(UUID.randomUUID(), UUID.randomUUID(), null, latitude, longitude, System.currentTimeMillis());
+        testTimestamp = System.currentTimeMillis();
+        command = new CheckInCommand(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                null,
+                new CoordenadasGPS(latitude, longitude),
+                testTimestamp
+        );
 
         valueOperationsMock = mock(ValueOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOperationsMock);
@@ -58,10 +66,10 @@ public class VehicleCheckInSteps {
         assertNull(caughtException, "No debió lanzarse ninguna excepción durante el procesamiento");
 
         String expectedKey = "route:" + command.routeId() + ":location";
-        String expectedValue = command.latitude() + "," + command.longitude();
+        String expectedValue = command.coordenadas().latitude() + "," + command.coordenadas().longitude();
         verify(valueOperationsMock, times(1)).set(expectedKey, expectedValue);
 
-        String expectedEventMessage = "Check-In registrado para ruta: " + command.routeId();
+        String expectedEventMessage = command.routeId() + "," + testTimestamp;
         verify(rabbitTemplate, times(1)).convertAndSend(
                 "tracking.exchange",
                 "tracking.routing.key",
