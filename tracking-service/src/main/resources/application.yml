@@ -6,9 +6,9 @@ spring:
     name: tracking-service
 
   datasource:
-    url: jdbc:postgresql://db.hnqtnbcutquwuvefhvli.supabase.co:5432/postgres
+    url: ${DATABASE_URL:jdbc:postgresql://db.hnqtnbcutquwuvefhvli.supabase.co:5432/postgres}
     username: ${DATABASE_USER:postgres}
-    password: ${DATABASE_PASSWORD:khafna09}
+    password: ${DATABASE_PASSWORD:ChapaTuRuta123}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -18,7 +18,6 @@ spring:
 
   data:
     redis:
-      # Conexion directa a tu instancia de Upstash Redis en la nube
       host: ${REDIS_HOST:perfect-spider-122585.upstash.io}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:gQAAAAAAAd7ZAAIgcDJkMzdlZjI3ZTkwZDE0YTAzOGUwODJlMTA1OGM1MjljOQ}
@@ -26,7 +25,6 @@ spring:
         enabled: ${REDIS_SSL:true}
 
   rabbitmq:
-    # Conexion directa a tu instancia de CloudAMQP en la nube
     host: ${RABBITMQ_HOST:jaragua.lmq.cloudamqp.com}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:jdqimjrx}
@@ -45,4 +43,4 @@ springdoc:
     path: /swagger-ui.html
 
 mapbox:
-  api-key: pk.eyJ1IjoiamhlY3RvcjYzMiIsImEiOiJjbW94amR0Y2QwMXh6MnFvaDhraGI1ZTMwIn0.V6nopXP1B4xIiI9wFwCuiw
+  api-key: ${MAPBOX_API_KEY:pk.eyJ1IjoiamhlY3RvcjYzMiIsImEiOiJjbW94amR0Y2QwMXh6MnFvaDhraGI1ZTMwIn0.V6nopXP1B4xIiI9wFwCuiw}
