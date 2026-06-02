@@ -10,10 +10,11 @@ spring:
     username: ${DATABASE_USER:postgres}
     password: ${DATABASE_PASSWORD:khafna09}
     driver-class-name: org.postgresql.Driver
-    jpa:
-      hibernate:
-        ddl-auto: update
-      show-sql: true
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 
   data:
     redis:
@@ -22,7 +23,7 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:gQAAAAAAAd7ZAAIgcDJkMzdlZjI3ZTkwZDE0YTAzOGUwODJlMTA1OGM1MjljOQ}
       ssl:
-        enabled: ${REDIS_SSL:true} # Obligatorio para Upstash
+        enabled: ${REDIS_SSL:true}
 
   rabbitmq:
     # Conexion directa a tu instancia de CloudAMQP en la nube
