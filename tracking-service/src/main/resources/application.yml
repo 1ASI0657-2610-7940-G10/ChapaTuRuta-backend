@@ -6,7 +6,7 @@ spring:
     name: tracking-service
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/tracking_db}
+    url: jdbc:postgresql://db.hnqtnbcutquwuvefhvli.supabase.co:5432/postgres
     username: ${DATABASE_USER:postgres}
     password: ${DATABASE_PASSWORD:khafna09}
     driver-class-name: org.postgresql.Driver
