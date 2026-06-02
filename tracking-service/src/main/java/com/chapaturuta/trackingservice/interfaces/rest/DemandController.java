@@ -30,10 +30,8 @@ public class DemandController {
             @RequestParam UUID stopId,
             @RequestParam UUID passengerId) {
 
-        // Llave estructurada para búsquedas eficientes
         String key = "route:" + routeId + ":stop:" + stopId + ":passenger:" + passengerId;
 
-        // Le asignamos 1 hora de TTL por si el bus demora por tráfico
         redisTemplate.opsForValue().set(key, "waiting", Duration.ofHours(1));
 
         return ResponseEntity.ok("Pasajero registrado en espera exitosamente");
@@ -42,7 +40,6 @@ public class DemandController {
     @GetMapping("/route/{routeId}")
     @Operation(summary = "Ver demanda de la ruta", description = "Devuelve cuántos pasajeros esperan en cada paradero de la ruta")
     public ResponseEntity<Map<String, Integer>> getRouteDemand(@PathVariable UUID routeId) {
-        // Buscamos todas las llaves de pasajeros esperando en cualquier paradero de esta ruta
         String pattern = "route:" + routeId + ":stop:*:passenger:*";
         Set<String> keys = redisTemplate.keys(pattern);
 
@@ -50,17 +47,15 @@ public class DemandController {
 
         if (keys != null) {
             for (String key : keys) {
-                // El formato de la llave es: route:{id}:stop:{id}:passenger:{id}
                 String[] parts = key.split(":");
                 if (parts.length >= 6) {
                     String stopId = parts[3];
-                    // Sumamos +1 a la cuenta de ese paradero
                     demandPerStop.put(stopId, demandPerStop.getOrDefault(stopId, 0) + 1);
                 }
             }
         }
 
-        return ResponseEntity.ok(demandPerStop); // Devuelve ej. {"stop-uuid-1": 5, "stop-uuid-2": 2}
+        return ResponseEntity.ok(demandPerStop);
     }
 
     @PostMapping("/transfer")

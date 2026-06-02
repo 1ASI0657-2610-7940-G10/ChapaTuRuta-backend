@@ -5,6 +5,16 @@ spring:
   application:
     name: tracking-service
 
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/tracking_db}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:khafna09}
+    driver-class-name: org.postgresql.Driver
+    jpa:
+      hibernate:
+        ddl-auto: update
+      show-sql: true
+
   data:
     redis:
       # Conexion directa a tu instancia de Upstash Redis en la nube
