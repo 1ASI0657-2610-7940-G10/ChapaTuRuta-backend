@@ -3,6 +3,8 @@ package com.chapaturuta.trackingservice.bdd;
 import com.chapaturuta.trackingservice.application.dto.CheckInCommand;
 import com.chapaturuta.trackingservice.application.usecase.TrackingCommandService;
 import com.chapaturuta.trackingservice.domain.valueobject.CoordenadasGPS;
+import com.chapaturuta.trackingservice.infrastructure.persistence.TrackingHistoryEntity;
+import com.chapaturuta.trackingservice.infrastructure.persistence.TrackingHistoryRepository;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -17,6 +19,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @CucumberContextConfiguration
@@ -31,6 +34,9 @@ public class VehicleCheckInSteps {
 
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
+
+    @MockitoBean
+    private TrackingHistoryRepository trackingHistoryRepository;
 
     private CheckInCommand command;
     private Exception caughtException;
@@ -65,6 +71,8 @@ public class VehicleCheckInSteps {
     @Then("the system updates the vehicle location in cache and emits an async notification event")
     public void verifyCheckInBehavior() {
         assertNull(caughtException, "No debió lanzarse ninguna excepción durante el procesamiento");
+
+        verify(trackingHistoryRepository, times(1)).save(any(TrackingHistoryEntity.class));
 
         String expectedKey = "route:" + command.routeId() + ":location";
         String expectedValue = command.coordenadas().latitude() + "," + command.coordenadas().longitude();
