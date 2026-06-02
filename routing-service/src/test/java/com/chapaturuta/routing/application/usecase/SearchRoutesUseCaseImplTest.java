@@ -1,6 +1,7 @@
 package com.chapaturuta.routing.application.usecase;
 
 import com.chapaturuta.routing.application.dto.RouteResponse;
+import com.chapaturuta.routing.application.dto.TripOptionResponse;
 import com.chapaturuta.routing.domain.model.Route;
 import com.chapaturuta.routing.domain.repository.RouteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,32 +44,31 @@ class SearchRoutesUseCaseImplTest {
 
     @Test
     void searchAvailableRoutes_Successful_ReturnsRouteResponseList() {
-        when(routeRepository.findRoutes("Ate", "Cercado de Lima"))
-                .thenReturn(List.of(mockRoute));
+        when(routeRepository.findRoutes("Ate", "Cercado de Lima")).thenReturn(List.of(mockRoute));
 
-        List<RouteResponse> responses = searchRoutesUseCase.searchAvailableRoutes("Ate", "Cercado de Lima");
+        when(routeRepository.findByOrigin("Ate")).thenReturn(Collections.emptyList());
+        when(routeRepository.findByDestination("Cercado de Lima")).thenReturn(Collections.emptyList());
 
-        // Assert
+        List<TripOptionResponse> responses = searchRoutesUseCase.searchAvailableRoutes("Ate", "Cercado de Lima");
+
         assertNotNull(responses);
         assertEquals(1, responses.size());
-        assertEquals(expectedRouteId, responses.get(0).routeId());
-        assertEquals("Ate", responses.get(0).origin());
-        assertEquals("Cercado de Lima", responses.get(0).destination());
-        assertEquals(3.50, responses.get(0).price());
-        assertEquals(45, responses.get(0).estimatedDuration());
-
-        verify(routeRepository, times(1)).findRoutes("Ate", "Cercado de Lima");
+        assertEquals(expectedRouteId, responses.get(0).legs().get(0).routeId());
+        assertEquals("Ate", responses.get(0).legs().get(0).origin());
+        assertEquals("Cercado de Lima", responses.get(0).legs().get(0).destination());
+        assertEquals(3.50, responses.get(0).totalPrice());
+        assertEquals(45, responses.get(0).totalEstimatedDuration());
     }
 
     @Test
     void searchAvailableRoutes_NoResults_ReturnsEmptyList() {
-        when(routeRepository.findRoutes("Surco", "Callao"))
-                .thenReturn(Collections.emptyList());
+        when(routeRepository.findRoutes("Surco", "Callao")).thenReturn(Collections.emptyList());
+        when(routeRepository.findByOrigin("Surco")).thenReturn(Collections.emptyList());
+        when(routeRepository.findByDestination("Callao")).thenReturn(Collections.emptyList());
 
-        List<RouteResponse> responses = searchRoutesUseCase.searchAvailableRoutes("Surco", "Callao");
-
-        assertNotNull(responses);
+        List<TripOptionResponse> responses = searchRoutesUseCase.searchAvailableRoutes("Surco", "Callao");
         assertTrue(responses.isEmpty());
-        verify(routeRepository, times(1)).findRoutes("Surco", "Callao");
     }
+
+
 }

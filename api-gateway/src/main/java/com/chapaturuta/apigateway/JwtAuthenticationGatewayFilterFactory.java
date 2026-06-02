@@ -14,24 +14,19 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
         return (exchange, chain) -> {
             String path = exchange.getRequest().getURI().getPath();
 
-            // Rutas públicas que no piden token
             if (path.contains("/auth/register") || path.contains("/auth/login") || path.contains("/api-docs")) {
                 return chain.filter(exchange);
             }
 
-            // Forma compatible y segura de obtener el Header en Spring Boot 4.x
             String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-            // Validar si el header existe y si tiene el formato correcto
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }
 
-            // Extraer el token
             String token = authHeader.replace("Bearer ", "");
 
-            // Validar token vacío
             if(token.isEmpty()) {
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();

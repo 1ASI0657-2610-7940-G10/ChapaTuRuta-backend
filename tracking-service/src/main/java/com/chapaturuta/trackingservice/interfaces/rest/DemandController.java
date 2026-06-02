@@ -54,4 +54,17 @@ public class DemandController {
         int count = redisTemplate.keys("stop:" + stopId + ":passenger:*").size();
         return ResponseEntity.ok(count);
     }
+
+    @PostMapping("/transfer")
+    @Operation(summary = "Registrar transbordo", description = "Encola al pasajero en el paradero del siguiente tramo de su viaje compuesto")
+    public ResponseEntity<String> registerTransfer(
+            @RequestParam UUID nextStopId,
+            @RequestParam UUID passengerId) {
+
+        String nextKey = "stop:" + nextStopId + ":passenger:" + passengerId;
+
+        redisTemplate.opsForValue().set(nextKey, "waiting_transfer", Duration.ofMinutes(2));
+
+        return ResponseEntity.ok("Pasajero registrado exitosamente para el transbordo en el paradero de conexión");
+    }
 }

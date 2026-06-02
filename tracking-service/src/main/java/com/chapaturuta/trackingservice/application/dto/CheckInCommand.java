@@ -5,6 +5,8 @@ import java.util.UUID;
 public record CheckInCommand(
         UUID driverId,
         UUID routeId,
+        UUID stopId,
         Double latitude,
-        Double longitude
+        Double longitude,
+        Long timestamp
 ) {}

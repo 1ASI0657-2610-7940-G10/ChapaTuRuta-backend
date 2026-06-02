@@ -24,7 +24,7 @@ spring:
         - id: identity-service
           uri: ${IDENTITY_SERVICE_URL:http://localhost:8080}
           predicates:
-            - Path=/api/v1/auth/**
+            - Path=/api/v1/auth/**, /api/v1/companies/**
           filters:
             - JwtAuthentication # Ahora sí encontrará el bean de tu filtro correctamente
 

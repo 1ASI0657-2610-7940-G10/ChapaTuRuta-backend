@@ -5,6 +5,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 @Service
 public class TrackingCommandService {
 
@@ -21,8 +23,18 @@ public class TrackingCommandService {
         String value = command.latitude() + "," + command.longitude();
         redisTemplate.opsForValue().set(key, value);
 
+        if (command.stopId() != null) {
+            String passengerPattern = "stop:" + command.stopId() + ":passenger:*";
+            Set<String> waitingPassengers = redisTemplate.keys(passengerPattern);
 
-        String eventMessage = "Check-In registrado para ruta: " + command.routeId();
+            if (waitingPassengers != null && !waitingPassengers.isEmpty()) {
+                redisTemplate.delete(waitingPassengers);
+                System.out.println("Auto-abordaje: Se recogieron " + waitingPassengers.size() + " pasajeros del paradero " + command.stopId());
+            }
+        }
+
+        long eventTimestamp = command.timestamp() != null ? command.timestamp() : System.currentTimeMillis();
+        String eventMessage = command.routeId() + "," + eventTimestamp;
         rabbitTemplate.convertAndSend("tracking.exchange", "tracking.routing.key", eventMessage);
     }
 }

@@ -28,7 +28,6 @@ public class CompanyEntity {
     @Column(length = 20)
     private String ruc;
 
-    // Relación: Una empresa pertenece a un Usuario (Gestor)
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private UserEntity manager;

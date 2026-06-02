@@ -37,8 +37,10 @@ class TrackingCommandServiceTest {
         checkInCommand = new CheckInCommand(
                 UUID.randomUUID(),
                 UUID.randomUUID(),
+                UUID.randomUUID(), // stopId (Simulamos que llegó a un paradero)
                 -12.0435,
-                -76.9532
+                -76.9532,
+                System.currentTimeMillis()
         );
     }
 

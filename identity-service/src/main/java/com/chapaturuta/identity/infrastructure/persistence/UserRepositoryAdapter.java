@@ -4,6 +4,7 @@ import com.chapaturuta.identity.domain.model.User;
 import com.chapaturuta.identity.domain.repository.UserRepository;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 public class UserRepositoryAdapter implements UserRepository {
@@ -22,6 +23,7 @@ public class UserRepositoryAdapter implements UserRepository {
                 .email(user.getEmail())
                 .password(user.getPassword())
                 .role(user.getRole())
+                .companyId(user.getCompanyId())
                 .createdAt(user.getCreatedAt())
                 .build();
 
@@ -32,15 +34,23 @@ public class UserRepositoryAdapter implements UserRepository {
 
     @Override
     public Optional<User> findByEmail(String email) {
-        return repository.findByEmail(email).map(entity ->
-                User.builder()
-                        .id(entity.getId())
-                        .name(entity.getName())
-                        .email(entity.getEmail())
-                        .password(entity.getPassword())
-                        .role(entity.getRole())
-                        .createdAt(entity.getCreatedAt())
-                        .build()
-        );
+        return repository.findByEmail(email).map(this::toModel);
+    }
+
+    @Override
+    public Optional<User> findById(UUID id) {
+        return repository.findById(id).map(this::toModel);
+    }
+
+    private User toModel(UserEntity entity) {
+        return User.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .email(entity.getEmail())
+                .password(entity.getPassword())
+                .role(entity.getRole())
+                .companyId(entity.getCompanyId())
+                .createdAt(entity.getCreatedAt())
+                .build();
     }
 }

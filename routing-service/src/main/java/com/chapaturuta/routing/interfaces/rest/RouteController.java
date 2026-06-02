@@ -1,6 +1,7 @@
 package com.chapaturuta.routing.interfaces.rest;
 
 import com.chapaturuta.routing.application.dto.RouteResponse;
+import com.chapaturuta.routing.application.dto.TripOptionResponse;
 import com.chapaturuta.routing.application.usecase.SearchRoutesUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,16 +17,18 @@ public class RouteController {
     private final SearchRoutesUseCase searchRoutesUseCase;
 
     @GetMapping("/search")
-    public ResponseEntity<List<RouteResponse>> searchRoutes(
+    public ResponseEntity<List<TripOptionResponse>> searchRoutes(
             @RequestParam String origin,
             @RequestParam String destination
     ) {
-        List<RouteResponse> routes = searchRoutesUseCase.searchAvailableRoutes(origin, destination);
-        return ResponseEntity.ok(routes);
+        List<TripOptionResponse> trips = searchRoutesUseCase.searchAvailableRoutes(origin, destination);
+        return ResponseEntity.ok(trips);
     }
 
     @GetMapping
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Routing Service is running on port 8081");
     }
+
+
 }

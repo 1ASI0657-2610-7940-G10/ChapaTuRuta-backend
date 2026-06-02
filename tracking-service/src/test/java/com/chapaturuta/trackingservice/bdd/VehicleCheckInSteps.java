@@ -37,7 +37,8 @@ public class VehicleCheckInSteps {
 
     @Given("an active driver transmits check-in coordinates latitude {double} and longitude {double} for a route")
     public void prepareCheckInCommand(double latitude, double longitude) {
-        command = new CheckInCommand(UUID.randomUUID(), UUID.randomUUID(), latitude, longitude);
+        // Pasamos null al stopId para simular un check-in intermedio (sin auto-abordaje en este test específico)
+        command = new CheckInCommand(UUID.randomUUID(), UUID.randomUUID(), null, latitude, longitude, System.currentTimeMillis());
 
         valueOperationsMock = mock(ValueOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOperationsMock);

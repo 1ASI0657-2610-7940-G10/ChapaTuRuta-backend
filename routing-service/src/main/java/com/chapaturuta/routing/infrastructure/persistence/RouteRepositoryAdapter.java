@@ -50,4 +50,16 @@ public class RouteRepositoryAdapter implements RouteRepository {
                 .durationMin(route.getDurationMin())
                 .build();
     }
+
+    @Override
+    public List<Route> findByOrigin(String origin) {
+        return springDataRouteRepository.findByOriginDistrictIgnoreCase(origin)
+                .stream().map(this::toModel).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Route> findByDestination(String destination) {
+        return springDataRouteRepository.findByDestinationDistrictIgnoreCase(destination)
+                .stream().map(this::toModel).collect(Collectors.toList());
+    }
 }
