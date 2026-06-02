@@ -3,7 +3,7 @@ server:
 
 # --- NUEVO: Configuración del Secreto JWT ---
 jwt:
-  secret: ${JWT_SECRET:ChapaTuRutaSecretKeyJWT}
+  secret: ${JWT_SECRET:ChapaTuRutaSecretKeyParaFirmarLosTokensJWTDeFormaSegura2026}
 
 spring:
   application:
