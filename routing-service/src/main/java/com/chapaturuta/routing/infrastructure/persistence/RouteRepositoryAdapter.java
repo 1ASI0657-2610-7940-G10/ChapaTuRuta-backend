@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Repository
@@ -61,5 +63,22 @@ public class RouteRepositoryAdapter implements RouteRepository {
     public List<Route> findByDestination(String destination) {
         return springDataRouteRepository.findByDestinationDistrictIgnoreCase(destination)
                 .stream().map(this::toModel).collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Route> findById(UUID id) {
+        return springDataRouteRepository.findById(id).map(this::toModel);
+    }
+
+    @Override
+    public List<Route> findAll() {
+        return springDataRouteRepository.findAll().stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        springDataRouteRepository.deleteById(id);
     }
 }
