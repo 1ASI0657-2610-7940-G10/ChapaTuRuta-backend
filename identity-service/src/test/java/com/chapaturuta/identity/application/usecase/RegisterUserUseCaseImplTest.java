@@ -38,7 +38,6 @@ class RegisterUserUseCaseImplTest {
         expectedUserId = UUID.randomUUID();
         expectedCompanyId = UUID.randomUUID();
 
-        // Se añade el expectedCompanyId como quinto parámetro ya que es obligatorio para el rol DRIVER
         validRequest = new UserRegistrationRequest(
                 "Carlos Mendoza",
                 "carlos@example.com",
@@ -50,7 +49,6 @@ class RegisterUserUseCaseImplTest {
 
     @Test
     void registerUser_Successful_ReturnsUserResponse() {
-        // Arrange: Simulamos que el correo no existe
         when(userRepository.findByEmail(validRequest.email())).thenReturn(Optional.empty());
 
         User savedMockUser = User.builder()
@@ -59,16 +57,14 @@ class RegisterUserUseCaseImplTest {
                 .email(validRequest.email())
                 .password(validRequest.password())
                 .role(validRequest.role())
-                .companyId(validRequest.companyId()) // Aseguramos que se guarde el companyId
+                .companyId(validRequest.companyId())
                 .createdAt(LocalDateTime.now())
                 .build();
 
         when(userRepository.save(any(User.class))).thenReturn(savedMockUser);
 
-        // Act
         UserResponse response = registerUserUseCase.registerUser(validRequest);
 
-        // Assert
         assertNotNull(response);
         assertEquals(expectedUserId, response.id());
         assertEquals("carlos@example.com", response.email());
@@ -78,11 +74,9 @@ class RegisterUserUseCaseImplTest {
 
     @Test
     void registerUser_DuplicateEmail_ThrowsIllegalArgumentException() {
-        // Arrange: Simulamos que el correo ya está registrado
         User existingUser = User.builder().email(validRequest.email()).build();
         when(userRepository.findByEmail(validRequest.email())).thenReturn(Optional.of(existingUser));
 
-        // Act & Assert
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> registerUserUseCase.registerUser(validRequest)
@@ -95,18 +89,16 @@ class RegisterUserUseCaseImplTest {
 
     @Test
     void registerUser_DriverWithoutCompanyId_ThrowsIllegalArgumentException() {
-        // Arrange: Petición de un conductor pero con companyId nulo
         UserRegistrationRequest badRequest = new UserRegistrationRequest(
                 "Pedro Conductor",
                 "pedro@example.com",
                 "pass123",
                 Role.DRIVER,
-                null // Error intencionado
+                null
         );
 
         when(userRepository.findByEmail(badRequest.email())).thenReturn(Optional.empty());
 
-        // Act & Assert
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> registerUserUseCase.registerUser(badRequest)

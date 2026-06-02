@@ -1,8 +1,11 @@
 package com.chapaturuta.identity.infrastructure.persistence;
 
+import com.chapaturuta.identity.domain.model.Role;
 import com.chapaturuta.identity.domain.model.User;
 import com.chapaturuta.identity.domain.repository.UserRepository;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,6 +43,18 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public Optional<User> findById(UUID id) {
         return repository.findById(id).map(this::toModel);
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        repository.deleteById(id);
+    }
+
+    @Override
+    public List<User> findByCompanyIdAndRole(UUID companyId, Role role) {
+        return repository.findByCompanyIdAndRole(companyId, role).stream()
+                .map(this::toModel)
+                .toList();
     }
 
     private User toModel(UserEntity entity) {

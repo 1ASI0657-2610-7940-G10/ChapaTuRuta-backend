@@ -2,12 +2,17 @@ package com.chapaturuta.identity.interfaces.rest;
 
 import com.chapaturuta.identity.application.dto.CompanyRegistrationRequest;
 import com.chapaturuta.identity.application.dto.CompanyResponse;
+import com.chapaturuta.identity.application.dto.UserResponse;
 import com.chapaturuta.identity.application.usecase.RegisterCompanyUseCase;
+import com.chapaturuta.identity.application.usecase.ManageUserUseCase; // IMPORT FALTANTE
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/companies")
@@ -15,9 +20,12 @@ import org.springframework.web.bind.annotation.*;
 public class CompanyController {
 
     private final RegisterCompanyUseCase registerCompanyUseCase;
+    private final ManageUserUseCase manageUserUseCase; // VARIABLE FALTANTE
 
-    public CompanyController(RegisterCompanyUseCase registerCompanyUseCase) {
+    // CONSTRUCTOR CORREGIDO
+    public CompanyController(RegisterCompanyUseCase registerCompanyUseCase, ManageUserUseCase manageUserUseCase) {
         this.registerCompanyUseCase = registerCompanyUseCase;
+        this.manageUserUseCase = manageUserUseCase;
     }
 
     @PostMapping("/register")
@@ -29,5 +37,12 @@ public class CompanyController {
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @GetMapping("/{companyId}/drivers")
+    @Operation(summary = "Listar choferes", description = "Devuelve todos los conductores vinculados a una empresa")
+    public ResponseEntity<List<UserResponse>> getCompanyDrivers(@PathVariable UUID companyId) {
+        List<UserResponse> drivers = manageUserUseCase.getDriversByCompany(companyId);
+        return ResponseEntity.ok(drivers);
     }
 }

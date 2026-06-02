@@ -11,6 +11,8 @@ import io.cucumber.spring.CucumberContextConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @CucumberContextConfiguration
@@ -26,9 +28,13 @@ public class RegisterUserSteps {
 
     @Given("a new user wants to register with email {string}, name {string}, password {string}, and role {string}")
     public void prepareRegistrationRequest(String email, String name, String password, String roleStr) {
-        // Convertimos el String al Enum Role correspondiente
         Role roleEnum = Role.valueOf(roleStr.toUpperCase());
-        request = new UserRegistrationRequest(name, email, password, roleEnum);
+
+        // Asignamos un companyId ficticio si el rol es DRIVER para pasar la nueva validación de negocio
+        UUID companyId = (roleEnum == Role.DRIVER) ? UUID.randomUUID() : null;
+
+        // Se añade el 5to parámetro
+        request = new UserRegistrationRequest(name, email, password, roleEnum, companyId);
     }
 
     @When("the registration request is processed")
@@ -51,18 +57,18 @@ public class RegisterUserSteps {
 
     @Given("an existing user is already registered with email {string}")
     public void setupExistingEmail(String duplicateEmail) {
-        // Usamos directamente la constante del enum Role.PASSENGER
         try {
+            // Se añade null como 5to parámetro para un PASSENGER
             registerUserUseCase.registerUser(
-                    new UserRegistrationRequest("User Existente", duplicateEmail, "pass", Role.PASSENGER)
+                    new UserRegistrationRequest("User Existente", duplicateEmail, "pass", Role.PASSENGER, null)
             );
         } catch (Exception ignored) {}
     }
 
     @When("a new user attempts to register with the duplicate email {string}")
     public void attemptDuplicateRegistration(String duplicateEmail) {
-        // Usamos directamente la constante del enum Role.PASSENGER
-        request = new UserRegistrationRequest("Nuevo Intento", duplicateEmail, "pass123", Role.PASSENGER);
+        // Se añade null como 5to parámetro
+        request = new UserRegistrationRequest("Nuevo Intento", duplicateEmail, "pass123", Role.PASSENGER, null);
         processRegistration();
     }
 
