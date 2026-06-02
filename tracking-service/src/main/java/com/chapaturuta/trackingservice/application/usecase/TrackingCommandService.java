@@ -5,6 +5,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Set;
 
 @Service
@@ -24,12 +25,14 @@ public class TrackingCommandService {
         redisTemplate.opsForValue().set(key, value);
 
         if (command.stopId() != null) {
-            String passengerPattern = "stop:" + command.stopId() + ":passenger:*";
+            String passengerPattern = "route:" + command.routeId() + ":stop:" + command.stopId() + ":passenger:*";
             Set<String> waitingPassengers = redisTemplate.keys(passengerPattern);
 
             if (waitingPassengers != null && !waitingPassengers.isEmpty()) {
-                redisTemplate.delete(waitingPassengers);
-                System.out.println("Auto-abordaje: Se recogieron " + waitingPassengers.size() + " pasajeros del paradero " + command.stopId());
+                for (String passengerKey : waitingPassengers) {
+                    redisTemplate.expire(passengerKey, Duration.ofMinutes(2));
+                }
+                System.out.println("Auto-abordaje: Se actualizó TTL a 2 min para " + waitingPassengers.size() + " pasajeros del paradero " + command.stopId());
             }
         }
 

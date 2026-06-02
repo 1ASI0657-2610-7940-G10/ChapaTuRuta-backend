@@ -40,6 +40,7 @@ public class VehicleCheckInSteps {
     @Given("an active driver transmits check-in coordinates latitude {double} and longitude {double} for a route")
     public void prepareCheckInCommand(double latitude, double longitude) {
         testTimestamp = System.currentTimeMillis();
+
         command = new CheckInCommand(
                 UUID.randomUUID(),
                 UUID.randomUUID(),

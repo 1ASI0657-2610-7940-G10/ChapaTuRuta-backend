@@ -5,12 +5,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/demand")
-@Tag(name = "Demanda y Concurrencia", description = "Gestión de pasajeros esperando en paraderos")
+@Tag(name = "Demand Management", description = "Gestión de la demanda de pasajeros en paraderos")
 public class DemandController {
 
     private final StringRedisTemplate redisTemplate;
@@ -19,52 +23,56 @@ public class DemandController {
         this.redisTemplate = redisTemplate;
     }
 
-    @PostMapping("/waiting")
-    @Operation(summary = "Registrar pasajero en espera", description = "Añade al pasajero a la lista del paradero con un Timeout de 2 minutos")
-    public ResponseEntity<String> registerWaitingPassenger(
+    @PostMapping("/join")
+    @Operation(summary = "Pasajero elige ruta", description = "Registra al pasajero en espera en un paradero específico")
+    public ResponseEntity<String> joinQueue(
+            @RequestParam UUID routeId,
             @RequestParam UUID stopId,
             @RequestParam UUID passengerId) {
 
-        String key = "stop:" + stopId + ":passenger:" + passengerId;
+        // Llave estructurada para búsquedas eficientes
+        String key = "route:" + routeId + ":stop:" + stopId + ":passenger:" + passengerId;
 
-        redisTemplate.opsForValue().set(key, "waiting", Duration.ofMinutes(2));
+        // Le asignamos 1 hora de TTL por si el bus demora por tráfico
+        redisTemplate.opsForValue().set(key, "waiting", Duration.ofHours(1));
 
-        return ResponseEntity.ok("Pasajero registrado en la cola de espera del paradero");
+        return ResponseEntity.ok("Pasajero registrado en espera exitosamente");
     }
 
-    @PostMapping("/board")
-    @Operation(summary = "Confirmar abordaje", description = "El pasajero confirma que subió al bus y se le quita de la lista de espera")
-    public ResponseEntity<String> confirmBoarding(
-            @RequestParam UUID stopId,
-            @RequestParam UUID passengerId) {
+    @GetMapping("/route/{routeId}")
+    @Operation(summary = "Ver demanda de la ruta", description = "Devuelve cuántos pasajeros esperan en cada paradero de la ruta")
+    public ResponseEntity<Map<String, Integer>> getRouteDemand(@PathVariable UUID routeId) {
+        // Buscamos todas las llaves de pasajeros esperando en cualquier paradero de esta ruta
+        String pattern = "route:" + routeId + ":stop:*:passenger:*";
+        Set<String> keys = redisTemplate.keys(pattern);
 
-        String key = "stop:" + stopId + ":passenger:" + passengerId;
+        Map<String, Integer> demandPerStop = new HashMap<>();
 
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-            redisTemplate.delete(key); // Lo quitamos porque ya subió
-            return ResponseEntity.ok("Abordaje confirmado exitosamente");
-        } else {
-            return ResponseEntity.badRequest().body("El pasajero ya no está en la lista de espera (Timeout de 2 mins alcanzado)");
+        if (keys != null) {
+            for (String key : keys) {
+                // El formato de la llave es: route:{id}:stop:{id}:passenger:{id}
+                String[] parts = key.split(":");
+                if (parts.length >= 6) {
+                    String stopId = parts[3];
+                    // Sumamos +1 a la cuenta de ese paradero
+                    demandPerStop.put(stopId, demandPerStop.getOrDefault(stopId, 0) + 1);
+                }
+            }
         }
-    }
 
-    @GetMapping("/count/{stopId}")
-    @Operation(summary = "Obtener nivel de concurrencia", description = "Retorna cuántas personas están esperando en un paradero")
-    public ResponseEntity<Integer> getDemandCount(@PathVariable UUID stopId) {
-        int count = redisTemplate.keys("stop:" + stopId + ":passenger:*").size();
-        return ResponseEntity.ok(count);
+        return ResponseEntity.ok(demandPerStop); // Devuelve ej. {"stop-uuid-1": 5, "stop-uuid-2": 2}
     }
 
     @PostMapping("/transfer")
-    @Operation(summary = "Registrar transbordo", description = "Encola al pasajero en el paradero del siguiente tramo de su viaje compuesto")
+    @Operation(summary = "Registrar transbordo", description = "Encola al pasajero en el siguiente tramo")
     public ResponseEntity<String> registerTransfer(
+            @RequestParam UUID nextRouteId,
             @RequestParam UUID nextStopId,
             @RequestParam UUID passengerId) {
 
-        String nextKey = "stop:" + nextStopId + ":passenger:" + passengerId;
+        String nextKey = "route:" + nextRouteId + ":stop:" + nextStopId + ":passenger:" + passengerId;
+        redisTemplate.opsForValue().set(nextKey, "waiting_transfer", Duration.ofHours(1));
 
-        redisTemplate.opsForValue().set(nextKey, "waiting_transfer", Duration.ofMinutes(2));
-
-        return ResponseEntity.ok("Pasajero registrado exitosamente para el transbordo en el paradero de conexión");
+        return ResponseEntity.ok("Pasajero registrado para transbordo exitosamente");
     }
 }

@@ -12,8 +12,12 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,7 +44,7 @@ class TrackingCommandServiceTest {
         checkInCommand = new CheckInCommand(
                 UUID.randomUUID(),
                 UUID.randomUUID(),
-                UUID.randomUUID(), // stopId simulado
+                UUID.randomUUID(),
                 new CoordenadasGPS(-12.0435, -76.9532),
                 testTimestamp
         );
@@ -50,13 +54,33 @@ class TrackingCommandServiceTest {
     void processCheckIn_Successful_SavesToRedisAndSendsToRabbitMQ() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
+        when(redisTemplate.keys(anyString())).thenReturn(Collections.emptySet());
+
         trackingCommandService.processCheckIn(checkInCommand);
 
         String expectedKey = "route:" + checkInCommand.routeId() + ":location";
         String expectedValue = "-12.0435,-76.9532";
         verify(valueOperations, times(1)).set(expectedKey, expectedValue);
 
-        // Se valida con el nuevo formato implementado para manejo offline
+        String expectedMessage = checkInCommand.routeId() + "," + testTimestamp;
+        verify(rabbitTemplate, times(1)).convertAndSend(
+                "tracking.exchange",
+                "tracking.routing.key",
+                expectedMessage
+        );
+    }
+
+    @Test
+    void processCheckIn_WithWaitingPassengers_AppliesTwoMinuteRule() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+
+        String mockPassengerKey = "route:" + checkInCommand.routeId() + ":stop:" + checkInCommand.stopId() + ":passenger:123";
+        when(redisTemplate.keys(anyString())).thenReturn(Set.of(mockPassengerKey));
+
+        trackingCommandService.processCheckIn(checkInCommand);
+
+        verify(redisTemplate, times(1)).expire(mockPassengerKey, Duration.ofMinutes(2));
+
         String expectedMessage = checkInCommand.routeId() + "," + testTimestamp;
         verify(rabbitTemplate, times(1)).convertAndSend(
                 "tracking.exchange",

@@ -3,12 +3,22 @@ package com.chapaturuta.identity.application.usecase;
 import com.chapaturuta.identity.application.dto.LoginRequest;
 import com.chapaturuta.identity.domain.model.User;
 import com.chapaturuta.identity.domain.repository.UserRepository;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 @Service
 public class AuthenticateUserUseCaseImpl implements AuthenticateUserUseCase {
 
     private final UserRepository userRepository;
+
+    @Value("${jwt.secret:ChapaTuRutaSecretKeyParaFirmarLosTokensJWTDeFormaSegura2026}")
+    private String jwtSecret;
 
     public AuthenticateUserUseCaseImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -23,13 +33,14 @@ public class AuthenticateUserUseCaseImpl implements AuthenticateUserUseCase {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
-        String secretKey = "ChapaTuRutaSecretKeyParaFirmarLosTokensJWTDeFormaSegura2026";
-        return io.jsonwebtoken.Jwts.builder()
-                .setSubject(user.getId().toString())
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
+        return Jwts.builder()
+                .subject(user.getId().toString())
                 .claim("role", user.getRole().name())
-                .setIssuedAt(new java.util.Date())
-                .setExpiration(new java.util.Date(System.currentTimeMillis() + 86400000))
-                .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 86400000)) // 1 día
+                .signWith(key)
                 .compact();
     }
 }
