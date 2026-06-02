@@ -31,7 +31,6 @@ public class TrackingController {
     @Operation(summary = "Registrar Check-in del Conductor", description = "Guarda ubicación en Redis y dispara evento RabbitMQ")
     public ResponseEntity<String> registerCheckIn(@RequestBody CheckInRequest request) {
         try {
-            // Se valida automáticamente al instanciar el Value Object
             CoordenadasGPS gps = new CoordenadasGPS(request.latitude(), request.longitude());
 
             CheckInCommand command = new CheckInCommand(
