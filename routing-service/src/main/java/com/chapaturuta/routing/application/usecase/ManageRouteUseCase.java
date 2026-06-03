@@ -29,7 +29,6 @@ class ManageRouteUseCaseImpl implements ManageRouteUseCase {
     @Override
     public RouteResponse createRoute(RouteRequest request) {
         Route newRoute = Route.builder()
-                .id(UUID.randomUUID())
                 .originDistrict(request.originDistrict())
                 .destinationDistrict(request.destinationDistrict())
                 .price(request.price())
