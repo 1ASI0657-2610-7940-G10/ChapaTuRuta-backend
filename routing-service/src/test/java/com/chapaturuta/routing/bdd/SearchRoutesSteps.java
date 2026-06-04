@@ -61,7 +61,7 @@ public class SearchRoutesSteps {
 
     @Then("the system returns a list of routes containing pricing and duration details")
     public void verifyResultsNotEmpty() {
-        assertNotNull(actualResponses);
+        assertNotNull(actualResponses, "La lista de rutas no debe ser nula");
         assertFalse(actualResponses.isEmpty(), "La lista de rutas no debe estar vacía");
 
         // Navegamos al primer tramo (leg) del primer TripOptionResponse
@@ -69,8 +69,10 @@ public class SearchRoutesSteps {
         assertEquals(currentDestination, actualResponses.get(0).legs().get(0).destination());
 
         // Validamos los totales del viaje completo
-        assertNotNull(actualResponses.get(0).totalPrice());
-        assertNotNull(actualResponses.get(0).totalEstimatedDuration());
+        assertNotNull(actualResponses.get(0).totalPrice(), "El precio total no debe ser nulo");
+        assertNotNull(actualResponses.get(0).totalEstimatedDuration(), "La duración estimada no debe ser nula");
+        assertTrue(actualResponses.get(0).totalPrice() > 0, "El precio debe ser mayor a 0");
+        assertTrue(actualResponses.get(0).totalEstimatedDuration() > 0, "La duración debe ser mayor a 0");
     }
 
     @Given("there are no routes registered from {string} to {string}")
@@ -83,7 +85,94 @@ public class SearchRoutesSteps {
 
     @Then("the system returns an empty list of routes")
     public void verifyResultsEmpty() {
-        assertNotNull(actualResponses);
+        assertNotNull(actualResponses, "La lista de rutas no debe ser nula");
         assertTrue(actualResponses.isEmpty(), "La lista de rutas debe estar completamente vacía");
+    }
+
+    @Given("the system has a transfer route from {string} via {string} to {string}")
+    public void setupTransferRoute(String origin, String via, String destination) {
+        Route leg1 = Route.builder()
+                .id(UUID.randomUUID())
+                .originDistrict(origin)
+                .destinationDistrict(via)
+                .price(3.00)
+                .durationMin(30)
+                .build();
+
+        Route leg2 = Route.builder()
+                .id(UUID.randomUUID())
+                .originDistrict(via)
+                .destinationDistrict(destination)
+                .price(2.50)
+                .durationMin(20)
+                .build();
+
+        when(routeRepository.findRoutes(origin, destination)).thenReturn(Collections.emptyList());
+        when(routeRepository.findByOrigin(origin)).thenReturn(List.of(leg1));
+        when(routeRepository.findByDestination(destination)).thenReturn(List.of(leg2));
+    }
+
+    @Then("the system returns routes with multiple legs")
+    public void verifyTransferRoutes() {
+        assertNotNull(actualResponses);
+        assertFalse(actualResponses.isEmpty(), "Debe haber al menos una opción de ruta");
+
+        // Verificar que existe al menos una ruta con múltiples tramos
+        boolean hasTransferRoute = actualResponses.stream()
+                .anyMatch(tripOption -> tripOption.legs().size() == 2);
+
+        assertTrue(hasTransferRoute, "Debe haber al menos una ruta con transbordo (2 tramos)");
+
+        // Validar que el precio total incluye ambos tramos
+        TripOptionResponse transferRoute = actualResponses.stream()
+                .filter(tripOption -> tripOption.legs().size() == 2)
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(transferRoute);
+        Double expectedPrice = transferRoute.legs().get(0).price() + transferRoute.legs().get(1).price();
+        assertEquals(expectedPrice, transferRoute.totalPrice());
+
+        // Validar que la duración incluye espera de transbordo (5 minutos)
+        Integer expectedDuration = transferRoute.legs().get(0).estimatedDuration() +
+                transferRoute.legs().get(1).estimatedDuration() + 5;
+        assertEquals(expectedDuration, transferRoute.totalEstimatedDuration());
+    }
+
+    @Given("the system has {int} available routes from {string} to {string}")
+    public void setupMultipleRoutes(int count, String origin, String destination) {
+        List<Route> routes = new java.util.ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            routes.add(Route.builder()
+                    .id(UUID.randomUUID())
+                    .originDistrict(origin)
+                    .destinationDistrict(destination)
+                    .price(3.00 + i * 0.5)
+                    .durationMin(30 + i * 5)
+                    .build());
+        }
+
+        when(routeRepository.findRoutes(origin, destination)).thenReturn(routes);
+        when(routeRepository.findByOrigin(origin)).thenReturn(Collections.emptyList());
+        when(routeRepository.findByDestination(destination)).thenReturn(Collections.emptyList());
+    }
+
+    @Then("the system returns {int} available routes")
+    public void verifyMultipleRoutes(int expectedCount) {
+        assertNotNull(actualResponses);
+        assertEquals(expectedCount, actualResponses.size(), 
+                "Se esperaban " + expectedCount + " rutas pero se obtuvieron " + actualResponses.size());
+    }
+
+    @Then("each route option has a valid price and duration")
+    public void verifyEachRouteHasValidData() {
+        assertNotNull(actualResponses);
+        for (TripOptionResponse route : actualResponses) {
+            assertNotNull(route.totalPrice(), "El precio no debe ser nulo");
+            assertNotNull(route.totalEstimatedDuration(), "La duración no debe ser nula");
+            assertTrue(route.totalPrice() > 0, "El precio debe ser mayor a 0");
+            assertTrue(route.totalEstimatedDuration() > 0, "La duración debe ser mayor a 0");
+            assertFalse(route.legs().isEmpty(), "Cada ruta debe tener al menos un tramo");
+        }
     }
 }
