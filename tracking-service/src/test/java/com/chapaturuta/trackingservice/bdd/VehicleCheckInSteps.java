@@ -16,6 +16,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
+import java.time.Duration;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,9 +44,19 @@ public class VehicleCheckInSteps {
     private Exception caughtException;
     private ValueOperations<String, String> valueOperationsMock;
     private long testTimestamp;
+    private double latitude;
+    private double longitude;
+    private String waitingPassengerKey;
+
+    @SuppressWarnings("unchecked")
+    private ValueOperations<String, String> createValueOperationsMock() {
+        return mock(ValueOperations.class);
+    }
 
     @Given("an active driver transmits check-in coordinates latitude {double} and longitude {double} for a route")
     public void prepareCheckInCommand(double latitude, double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
         testTimestamp = System.currentTimeMillis();
 
         command = new CheckInCommand(
@@ -55,8 +67,27 @@ public class VehicleCheckInSteps {
                 testTimestamp
         );
 
-        valueOperationsMock = mock(ValueOperations.class);
+        valueOperationsMock = createValueOperationsMock();
         when(redisTemplate.opsForValue()).thenReturn(valueOperationsMock);
+        waitingPassengerKey = null;
+        caughtException = null;
+    }
+
+    @Given("the route has waiting passengers at stop {string}")
+    public void prepareWaitingPassengersAtStop(String stopId) {
+        UUID stopUuid = UUID.fromString(stopId);
+
+        command = new CheckInCommand(
+                command.driverId(),
+                command.routeId(),
+                stopUuid,
+                new CoordenadasGPS(latitude, longitude),
+                testTimestamp
+        );
+
+        waitingPassengerKey = "route:" + command.routeId() + ":stop:" + command.stopId() + ":passenger:123";
+        when(redisTemplate.keys("route:" + command.routeId() + ":stop:" + command.stopId() + ":passenger:*"))
+                .thenReturn(Set.of(waitingPassengerKey));
     }
 
     @When("the check-in command is processed by the command service")
@@ -84,5 +115,15 @@ public class VehicleCheckInSteps {
                 "tracking.routing.key",
                 expectedEventMessage
         );
+    }
+
+    @Then("the waiting passengers at the stop receive a two-minute extension")
+    public void verifyWaitingPassengersExtension() {
+        assertNotNull(command.stopId(), "El escenario debe incluir un stopId para extender a pasajeros en espera");
+        assertNotNull(waitingPassengerKey, "Debe existir una clave de pasajero simulada para esta rama");
+
+        String expectedPattern = "route:" + command.routeId() + ":stop:" + command.stopId() + ":passenger:*";
+        verify(redisTemplate, times(1)).keys(expectedPattern);
+        verify(redisTemplate, times(1)).expire(waitingPassengerKey, Duration.ofMinutes(2));
     }
 }
