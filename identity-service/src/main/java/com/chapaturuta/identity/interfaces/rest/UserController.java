@@ -22,9 +22,8 @@ public class UserController {
 
     private final RegisterUserUseCase registerUserUseCase;
     private final AuthenticateUserUseCase authenticateUserUseCase;
-    private final ManageUserUseCase manageUserUseCase; // VARIABLE FALTANTE
+    private final ManageUserUseCase manageUserUseCase;
 
-    // CONSTRUCTOR CORREGIDO
     public UserController(RegisterUserUseCase registerUserUseCase,
                           AuthenticateUserUseCase authenticateUserUseCase,
                           ManageUserUseCase manageUserUseCase) {

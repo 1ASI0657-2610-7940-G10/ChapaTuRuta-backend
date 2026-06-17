@@ -4,7 +4,7 @@ import com.chapaturuta.identity.application.dto.CompanyRegistrationRequest;
 import com.chapaturuta.identity.application.dto.CompanyResponse;
 import com.chapaturuta.identity.application.dto.UserResponse;
 import com.chapaturuta.identity.application.usecase.RegisterCompanyUseCase;
-import com.chapaturuta.identity.application.usecase.ManageUserUseCase; // IMPORT FALTANTE
+import com.chapaturuta.identity.application.usecase.ManageUserUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;

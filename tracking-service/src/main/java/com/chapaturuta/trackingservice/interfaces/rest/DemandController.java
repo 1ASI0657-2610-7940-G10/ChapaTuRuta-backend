@@ -3,6 +3,7 @@ package com.chapaturuta.trackingservice.interfaces.rest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -69,5 +70,24 @@ public class DemandController {
         redisTemplate.opsForValue().set(nextKey, "waiting_transfer", Duration.ofHours(1));
 
         return ResponseEntity.ok("Pasajero registrado para transbordo exitosamente");
+    }
+
+    @DeleteMapping("/leave")
+    @Operation(summary = "Cancelar espera", description = "El pasajero sale voluntariamente de la cola del paradero")
+    public ResponseEntity<String> leaveQueue(
+            @RequestParam UUID routeId,
+            @RequestParam UUID stopId,
+            @RequestParam UUID passengerId) {
+
+        String key = "route:" + routeId + ":stop:" + stopId + ":passenger:" + passengerId;
+
+        // Elimina la llave directamente de Redis
+        Boolean deleted = redisTemplate.delete(key);
+
+        if (Boolean.TRUE.equals(deleted)) {
+            return ResponseEntity.ok("Espera cancelada exitosamente.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No estabas registrado en este paradero.");
+        }
     }
 }
