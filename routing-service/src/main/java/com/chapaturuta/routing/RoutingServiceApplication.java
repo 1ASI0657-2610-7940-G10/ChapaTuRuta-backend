@@ -15,6 +15,7 @@ public class RoutingServiceApplication {
     }
 
     @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(JdbcTemplate.class)
     public CommandLineRunner initDatabase(JdbcTemplate jdbcTemplate) {
         return args -> {
             try {

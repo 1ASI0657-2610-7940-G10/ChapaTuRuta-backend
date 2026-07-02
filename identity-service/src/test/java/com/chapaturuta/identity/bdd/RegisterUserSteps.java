@@ -96,4 +96,21 @@ public class RegisterUserSteps {
         response.andExpect(status().isBadRequest())
                 .andExpect(content().string(expectedMessage));
     }
+
+    @Given("a new driver wants to register with email {string}, name {string}, password {string}, role {string}, and route ID {string}")
+    public void prepareDriverWithRouteRegistrationRequest(String email, String name, String password, String roleStr, String routeIdStr) {
+        Role roleEnum = Role.valueOf(roleStr.toUpperCase());
+        UUID companyId = UUID.randomUUID();
+        UUID routeId = UUID.fromString(routeIdStr);
+        request = new UserRegistrationRequest(name, email, password, roleEnum, companyId, routeId);
+    }
+
+    @Then("the driver account is successfully created returning the details and route ID {string}")
+    public void verifyDriverWithRouteRegistration(String expectedRouteId) throws Exception {
+        response.andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.name").value(request.name()))
+                .andExpect(jsonPath("$.email").value(request.email()))
+                .andExpect(jsonPath("$.routeId").value(expectedRouteId));
+    }
 }

@@ -92,6 +92,45 @@ class ManageRouteUseCaseImplTest {
 
             assertNotNull(response.routeId());
         }
+
+        @Test
+        @DisplayName("Debe crear una ruta con paraderos correctamente")
+        void createRoute_WithStops_SavesAndReturnsStops() {
+            com.chapaturuta.routing.application.dto.StopDTO stopDto = new com.chapaturuta.routing.application.dto.StopDTO(
+                    null, "Paradero Izaguirre", -12.00, -77.00, "Av. Izaguirre", 1
+            );
+            RouteRequest requestWithStops = new RouteRequest("Ate", "Cercado de Lima", 3.50, 45, List.of(stopDto));
+
+            com.chapaturuta.routing.domain.model.RouteStop domainStop = com.chapaturuta.routing.domain.model.RouteStop.builder()
+                    .name("Paradero Izaguirre")
+                    .latitude(-12.00)
+                    .longitude(-77.00)
+                    .address("Av. Izaguirre")
+                    .stopOrder(1)
+                    .build();
+
+            Route routeWithStops = Route.builder()
+                    .id(routeId)
+                    .originDistrict("Ate")
+                    .destinationDistrict("Cercado de Lima")
+                    .price(3.50)
+                    .durationMin(45)
+                    .stops(List.of(domainStop))
+                    .build();
+
+            when(routeRepository.save(any(Route.class))).thenReturn(routeWithStops);
+
+            RouteResponse response = manageRouteUseCase.createRoute(requestWithStops);
+
+            assertNotNull(response);
+            assertEquals(1, response.stops().size());
+            assertEquals("Paradero Izaguirre", response.stops().get(0).name());
+            verify(routeRepository).save(argThat(route ->
+                    route.getStops() != null &&
+                    route.getStops().size() == 1 &&
+                    route.getStops().get(0).getName().equals("Paradero Izaguirre")
+            ));
+        }
     }
 
     @Nested
