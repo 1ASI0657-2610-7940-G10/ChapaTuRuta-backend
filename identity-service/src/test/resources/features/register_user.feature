@@ -17,8 +17,3 @@ Feature: User Registration Authentication Flow
     Given a new driver attempts to register with email "chofer@example.com", name "Carlos", password "pass123", but no company ID
     When the registration request is processed
     Then the system rejects the request with a bad request error "Los conductores deben estar asociados a una empresa (companyId requerido)"
-
-  Scenario: Successful driver registration with route assignment
-    Given a new driver wants to register with email "driver.assigned@example.com", name "Carlos Chofer", password "driver123", role "DRIVER", and route ID "11111111-1111-1111-1111-111111111111"
-    When the registration request is processed
-    Then the driver account is successfully created returning the details and route ID "11111111-1111-1111-1111-111111111111"

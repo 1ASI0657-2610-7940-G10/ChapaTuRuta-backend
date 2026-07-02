@@ -1,62 +1,70 @@
-# Informe Técnico de Arquitectura: ChapaTuRuta
+﻿# Informe de Arquitectura: ChapaTuRuta
 
-Este informe describe los detalles técnicos, patrones de diseño, elección de tecnologías, decisiones de arquitectura y la infraestructura configurada para la plataforma **ChapaTuRuta**.
+## 1. Visión General de la Arquitectura
+El sistema **ChapaTuRuta** está diseñado utilizando una **Arquitectura de Microservicios**. Esta elección permite escalar diferentes partes del sistema de manera independiente (por ejemplo, el servicio de rastreo en tiempo real requiere más recursos que el de identidad) y facilita el desarrollo paralelo.
 
----
-
-## 1. Patrón Arquitectónico y Estilo de Microservicios
-
-### 1.1 Microservicios
-La plataforma se encuentra distribuida en microservicios independientes, desacoplados por dominio y base de datos propia, lo que facilita el escalado horizontal y el despliegue independiente:
-- **`api-gateway`**: El punto de entrada centralizado de la plataforma que actúa como proxy inverso y distribuye las peticiones HTTP a los servicios correspondientes (`routing-service`, `identity-service`, `tracking-service`).
-- **`identity-service`**: Microservicio encargado del registro, autenticación (generación de tokens JWT) y gestión del ciclo de vida de los usuarios (Pasajeros, Conductores y Managers) y empresas.
-- **`routing-service`**: Microservicio para la gestión del catálogo de rutas y paraderos geolocalizados, así como del motor de búsqueda de trayectos directos o con trasbordos.
-- **`tracking-service`**: Microservicio encargado del tracking GPS de vehículos en tiempo real, cálculo de la demanda de pasajeros esperando en los paraderos y cálculo del tiempo estimado de llegada (ETA).
-
-### 1.2 Arquitectura Hexagonal (Puertos y Adaptadores)
-Cada microservicio está estructurado siguiendo los principios de la Arquitectura Hexagonal para aislar las reglas de negocio del software de los detalles de infraestructura (base de datos, controladores REST, colas de mensajería):
-1. **Domain (Núcleo)**: Contiene los modelos de negocio puros (`User`, `Route`, `RouteStop`, `CheckInEvent`) y las interfaces de los repositorios sin dependencias de frameworks.
-2. **Application (Casos de Uso)**: Define las interfaces e implementaciones de los casos de uso (`RegisterUserUseCase`, `ManageRouteUseCase`, `TrackingCommandService`) y los DTOs que fluyen hacia afuera.
-3. **Infrastructure (Adaptadores)**: Implementa los detalles técnicos:
-   - **Adaptadores de Entrada (Primary)**: Controladores REST que manejan las peticiones HTTP (`UserController`, `RouteController`).
-   - **Adaptadores de Salida (Secondary)**: Adaptadores de persistencia JPA (`UserRepositoryAdapter`), clientes de caché y publicadores/suscriptores de mensajería.
-
-### 1.3 Patrones de Diseño Utilizados
-- **Repository Pattern**: Implementado a través de adapters para desacoplar el acceso a datos.
-- **CQRS (Command Query Responsibility Segregation) básico**: Visible en el `tracking-service` dividido en `TrackingCommandService` (para escrituras/check-ins) y `TrackingQueryService` (para lecturas de ETA y ubicaciones).
-- **Builder Pattern**: Utilizado extensamente para la instanciación inmutable de entidades y DTOs.
-- **Cascade Save y Orphan Removal**: Configurado en JPA para permitir que la ruta funcione como raíz del agregado y persista sus paradas de manera atómica.
+### Microservicios Principales:
+1. **API Gateway**: Actúa como el punto de entrada único para todas las solicitudes de los clientes (frontend/móvil). Se encarga del enrutamiento de peticiones, manejo de CORS y validación inicial de tokens JWT.
+2. **Identity Service**: Gestiona la autenticación, autorización (RBAC: Manager, Driver, Passenger) y el registro de usuarios y empresas. Genera los tokens JWT.
+3. **Routing Service**: Administra las rutas estáticas y paraderos. Gestiona la información geográfica y el orden de los paraderos.
+4. **Tracking Service**: Maneja la ubicación en tiempo real de los vehículos, check-ins en paraderos y cálculo de tiempos de llegada estimados (ETA).
 
 ---
 
-## 2. Tecnologías de Almacenamiento y Mensajería
+## 2. Decisiones de Arquitectura
 
-### 2.1 Uso de Redis (Caching de Alta Velocidad y Demanda Activa)
-El microservicio `tracking-service` utiliza **Redis** (integrado mediante Spring Data Redis / Jedis) como almacén in-memory clave-valor debido a su necesidad de lecturas y escrituras de latencia sub-milisegundo.
-- **Tracking en Tiempo Real:** Las coordenadas GPS del último Check-In del conductor se guardan con la clave `route:{routeId}:driver:{driverId}:location`, lo que permite que el mapa del pasajero obtenga la posición actual del bus instantáneamente.
-- **Demanda Activa de Pasajeros:** Cuando un pasajero pulsa "Esperar Bus", se inserta una llave en Redis con la estructura `route:{routeId}:stop:{stopId}:passenger:{passengerId}` con un TTL (tiempo de vida) específico. El backend calcula la demanda activa buscando las llaves activas mediante patrones de coincidencia rápida (`keys`).
-- **Cálculo de ETA Ultrarrápido:** Se recuperan las últimas ubicaciones desde Redis y se calcula el ETA combinándolo con APIs de geolocalización.
+### Arquitectura Hexagonal (Ports and Adapters)
+Dentro de cada microservicio, se implementa la Arquitectura Hexagonal para asegurar un alto desacoplamiento entre la lógica de negocio y las tecnologías externas.
 
-### 2.2 Uso de RabbitMQ (Desacoplamiento Orientado a Eventos - EDA)
-**RabbitMQ** se utiliza como broker de mensajería AMQP para implementar una arquitectura orientada a eventos. Esto evita que llamadas de sincronización bloqueen el hilo de ejecución principal y permite notificaciones reactivas.
-- **Flujo de Eventos:**
-  1. Cuando un conductor realiza un **Check-In** en un paradero, el `TrackingCommandService` procesa el comando, actualiza Redis y publica un evento `VehicleCheckInEvent` serializado a JSON en el exchange `tracking.exchange` usando la clave de enrutamiento `tracking.routing.key`.
-  2. El exchange distribuye el evento a la cola `tracking.queue`.
-  3. El `NotificationWorker` en el mismo o en otros microservicios consume de forma asíncrona de `tracking.queue` (`@RabbitListener`) y se encarga de disparar las notificaciones de proximidad a los dispositivos de los pasajeros que están esperando en ese paradero.
+- **Capa de Dominio (Domain)**: Contiene las entidades del negocio (ej. `User`, `Route`, `Location`) y las interfaces (Puertos) de repositorios. No tiene dependencias de frameworks externos (como Spring o JPA).
+- **Capa de Aplicación (Application / Use Cases)**: Orquesta la lógica de negocio utilizando los puertos del dominio. Aquí residen servicios como `RegisterUserUseCase` o `ManageRouteUseCase`.
+- **Capa de Infraestructura (Infrastructure)**: Implementa los puertos (Adaptadores). Contiene los repositorios JPA (`RouteRepositoryAdapter`), Controladores REST (`UserController`), configuraciones de seguridad y conexiones a bases de datos o brokers de mensajes.
+
+### Patrones Utilizados
+- **API Gateway Pattern**: Centraliza el acceso y la seguridad perimetral.
+- **Database per Service**: Cada microservicio (Identity, Routing) tiene su propia base de datos (o esquema lógico separado) en PostgreSQL, garantizando autonomía de datos.
+- **Token-based Authentication (JWT)**: `Identity Service` emite tokens firmados y el `API Gateway` / microservicios los validan, permitiendo autenticación sin estado (stateless).
+- **Publish-Subscribe / Asynchronous Messaging**: Usado para actualizaciones en tiempo real.
 
 ---
 
-## 3. Contenedores y Configuración de Despliegue
+## 3. Uso de Redis y RabbitMQ en el Tracking Service
 
-### 3.1 Uso de Docker
-Cada microservicio cuenta con su respectivo archivo `Dockerfile` utilizando imágenes base optimizadas de Java (como `eclipse-temurin` y `corretto` sobre Alpine) para compilar y empaquetar la aplicación en un artefacto JAR ejecutable. Esto permite que los servicios corran exactamente igual en local que en la nube, aislando las variables del sistema operativo.
+El rastreo en tiempo real de los vehículos es un desafío de alta concurrencia. Para ello, se emplean dos tecnologías clave:
 
-### 3.2 Pipeline de Despliegue Configurado (Render)
-El despliegue está automatizado e integrado de forma continua (CI/CD) en la nube a través de **Render**:
-- **Monolito de Código / Repositorio Único:** Al subir código al repositorio principal de GitHub en la rama `develop`, Render detecta los cambios.
-- **Servicios Web Independientes:** Cada microservicio está configurado en Render como un servicio web independiente con su propia ruta de origen (`identity-service`, `routing-service`, `tracking-service`).
-- **Variables de Entorno Inyectadas:** Render inyecta dinámicamente las credenciales necesarias en producción:
-  - `DATABASE_URL`, `DATABASE_USER` y `DATABASE_PASSWORD` para las conexiones PostgreSQL.
-  - `REDIS_HOST`, `REDIS_PORT` y `REDIS_PASSWORD` para conectar con el clúster de caché Redis (alojado en Upstash).
-  - `RABBITMQ_HOST`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD` y `RABBITMQ_VHOST` para conectar con el broker RabbitMQ (alojado en CloudAMQP).
-  - El puerto dinámico `${PORT}` que expone cada contenedor de forma pública.
+### RabbitMQ (Mensajería Asíncrona)
+- **Propósito**: Actúa como un *Message Broker*. Cuando el frontend del conductor emite una actualización de ubicación (Check-in o GPS tracking), la petición se encola en RabbitMQ.
+- **Ventaja**: Evita sobrecargar la base de datos principal con escrituras continuas. Permite procesar picos de actualizaciones geográficas de manera asíncrona, encolándolas de forma segura hasta que el servicio de rastreo pueda procesarlas y guardarlas en caché o base de datos.
+
+### Redis (Caché y Real-time)
+- **Propósito**: Base de datos en memoria clave-valor.
+- **Uso**: Almacena la *última ubicación conocida* de cada conductor y el estado temporal de los paraderos. 
+- **Ventaja**: Las lecturas del pasajero (que consulta constantemente "¿dónde está mi bus?") se dirigen a Redis, proporcionando tiempos de respuesta de milisegundos en lugar de consultar costosas tablas relacionales en PostgreSQL.
+
+---
+
+## 4. Elección de Tecnologías
+
+- **Backend Framework**: **Spring Boot 3 (Java 21)**. Elegido por su robustez, excelente ecosistema para microservicios (Spring Cloud Gateway, Spring Data JPA) y fuerte tipado.
+- **Frontend**: **React.js**. Utilizado para las interfaces web del Manager, Driver y Passenger. Elegido por su reactividad y gran ecosistema de librerías.
+- **Base de Datos Relacional**: **PostgreSQL**. Utilizado para datos estructurados, relaciones complejas y transaccionales (Usuarios, Rutas, Paraderos).
+- **Mapas y Geocoding**: **Mapbox GL JS**. Integrado en el frontend para renderizar mapas interactivos, trazar rutas personalizadas y visualización en tiempo real con alto rendimiento.
+- **Gestión de Dependencias y Build**: Maven.
+
+---
+
+## 5. Deploy Configurado y Uso de Docker
+
+### Dockerización
+El sistema está completamente contenerizado. Cada microservicio cuenta con su propio `Dockerfile` que define un proceso de construcción en dos fases (Multi-stage build):
+1. **Fase de Build**: Compila el código Java usando Maven.
+2. **Fase de Runtime**: Ejecuta el `.jar` compilado sobre una imagen ligera de Java (`eclipse-temurin:21-jre-alpine` o similar), reduciendo el tamaño de la imagen final y mejorando la seguridad.
+
+Para desarrollo local, se dispone de un archivo `docker-compose.yml` que levanta las bases de datos (PostgreSQL, Redis, RabbitMQ) y, opcionalmente, los servicios interconectados.
+
+### Despliegue en la Nube (Render)
+El despliegue está optimizado para plataformas PaaS como **Render**.
+- **Web Services**: Cada microservicio se despliega como un "Web Service" independiente.
+- **Variables de Entorno (Environment Variables)**: La configuración de conexiones (DB URL, Redis URL, JWT Secret) se inyecta mediante variables de entorno de Render, evitando hardcodear credenciales en el código fuente.
+- **Sincronización de Base de Datos**: Spring Data JPA (`ddl-auto=update` o migraciones SQL manuales en el arranque) asegura que la estructura de la base de datos en la nube esté sincronizada con las entidades de código de la rama `develop`.
+

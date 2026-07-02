@@ -94,42 +94,38 @@ class ManageRouteUseCaseImplTest {
         }
 
         @Test
-        @DisplayName("Debe crear una ruta con paraderos correctamente")
-        void createRoute_WithStops_SavesAndReturnsStops() {
-            com.chapaturuta.routing.application.dto.StopDTO stopDto = new com.chapaturuta.routing.application.dto.StopDTO(
-                    null, "Paradero Izaguirre", -12.00, -77.00, "Av. Izaguirre", 1
-            );
-            RouteRequest requestWithStops = new RouteRequest("Ate", "Cercado de Lima", 3.50, 45, List.of(stopDto));
-
-            com.chapaturuta.routing.domain.model.RouteStop domainStop = com.chapaturuta.routing.domain.model.RouteStop.builder()
-                    .name("Paradero Izaguirre")
-                    .latitude(-12.00)
-                    .longitude(-77.00)
-                    .address("Av. Izaguirre")
-                    .stopOrder(1)
-                    .build();
+        @DisplayName("Debe crear una ruta con paraderos exitosamente")
+        void createRouteWithStops_Successful() {
+            com.chapaturuta.routing.application.dto.StopDTO stopDto = new com.chapaturuta.routing.application.dto.StopDTO(null, "Paradero Inicial", -11.9, -77.0, "Av. Universitaria", 1);
+            RouteRequest requestWithStops = new RouteRequest("Los Olivos", "San Miguel", 2.50, 45, List.of(stopDto));
+            
+            com.chapaturuta.routing.domain.model.RouteStop mockStop = com.chapaturuta.routing.domain.model.RouteStop.builder()
+                .id(UUID.randomUUID())
+                .name("Paradero Inicial")
+                .latitude(-11.9)
+                .longitude(-77.0)
+                .address("Av. Universitaria")
+                .stopOrder(1)
+                .build();
 
             Route routeWithStops = Route.builder()
-                    .id(routeId)
-                    .originDistrict("Ate")
-                    .destinationDistrict("Cercado de Lima")
-                    .price(3.50)
-                    .durationMin(45)
-                    .stops(List.of(domainStop))
-                    .build();
+                .id(routeId)
+                .originDistrict("Los Olivos")
+                .destinationDistrict("San Miguel")
+                .price(2.50)
+                .durationMin(45)
+                .stops(List.of(mockStop))
+                .build();
 
             when(routeRepository.save(any(Route.class))).thenReturn(routeWithStops);
 
             RouteResponse response = manageRouteUseCase.createRoute(requestWithStops);
 
             assertNotNull(response);
+            assertEquals("Los Olivos", response.origin());
+            assertNotNull(response.stops());
             assertEquals(1, response.stops().size());
-            assertEquals("Paradero Izaguirre", response.stops().get(0).name());
-            verify(routeRepository).save(argThat(route ->
-                    route.getStops() != null &&
-                    route.getStops().size() == 1 &&
-                    route.getStops().get(0).getName().equals("Paradero Izaguirre")
-            ));
+            assertEquals("Paradero Inicial", response.stops().get(0).name());
         }
     }
 

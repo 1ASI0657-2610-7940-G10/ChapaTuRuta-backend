@@ -4,6 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.CommandLineRunner;
 
@@ -15,7 +16,7 @@ public class RoutingServiceApplication {
     }
 
     @Bean
-    @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(JdbcTemplate.class)
+    @Profile("!test")
     public CommandLineRunner initDatabase(JdbcTemplate jdbcTemplate) {
         return args -> {
             try {
@@ -38,3 +39,4 @@ public class RoutingServiceApplication {
         };
     }
 }
+
