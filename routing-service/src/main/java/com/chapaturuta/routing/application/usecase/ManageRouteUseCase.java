@@ -15,6 +15,7 @@ public interface ManageRouteUseCase {
     RouteResponse updateRoute(UUID id, RouteRequest request);
     void deleteRoute(UUID id);
     List<RouteResponse> getAllRoutes();
+    RouteResponse getRouteById(UUID id);
 }
 
 @Service
@@ -24,6 +25,13 @@ class ManageRouteUseCaseImpl implements ManageRouteUseCase {
 
     public ManageRouteUseCaseImpl(RouteRepository routeRepository) {
         this.routeRepository = routeRepository;
+    }
+
+    @Override
+    public RouteResponse getRouteById(UUID id) {
+        Route route = routeRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Ruta no encontrada"));
+        return mapToResponse(route);
     }
 
     @Override

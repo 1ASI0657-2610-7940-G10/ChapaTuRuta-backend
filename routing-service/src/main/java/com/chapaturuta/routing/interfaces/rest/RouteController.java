@@ -46,6 +46,16 @@ public class RouteController {
         return ResponseEntity.ok(manageRouteUseCase.getAllRoutes());
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtener detalle de ruta", description = "Devuelve una ruta específica con sus paraderos")
+    public ResponseEntity<?> getRouteById(@PathVariable UUID id) {
+        try {
+            return ResponseEntity.ok(manageRouteUseCase.getRouteById(id));
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
+
     @PostMapping
     @Operation(summary = "Crear nueva ruta", description = "Agrega una nueva ruta al catálogo")
     public ResponseEntity<RouteResponse> createRoute(@RequestBody RouteRequest request) {
