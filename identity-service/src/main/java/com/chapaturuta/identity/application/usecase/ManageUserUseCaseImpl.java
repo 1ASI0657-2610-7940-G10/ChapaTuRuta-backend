@@ -75,6 +75,8 @@ public class ManageUserUseCaseImpl implements ManageUserUseCase {
                 user.getName(),
                 user.getEmail(),
                 user.getRole(),
+                user.getCompanyId(),
+                user.getRouteId(),
                 user.getCreatedAt()
         );
     }

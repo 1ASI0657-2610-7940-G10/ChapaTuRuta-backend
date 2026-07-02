@@ -18,5 +18,6 @@ public class User {
     private String password;
     private Role role;
     private UUID companyId;
+    private UUID routeId;
     private LocalDateTime createdAt;
 }

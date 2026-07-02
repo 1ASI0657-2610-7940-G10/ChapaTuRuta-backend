@@ -27,6 +27,7 @@ public class UserRepositoryAdapter implements UserRepository {
                 .password(user.getPassword())
                 .role(user.getRole())
                 .companyId(user.getCompanyId())
+                .routeId(user.getRouteId())
                 .createdAt(user.getCreatedAt())
                 .build();
 
@@ -70,6 +71,7 @@ public class UserRepositoryAdapter implements UserRepository {
                 .password(entity.getPassword())
                 .role(entity.getRole())
                 .companyId(entity.getCompanyId())
+                .routeId(entity.getRouteId())
                 .createdAt(entity.getCreatedAt())
                 .build();
     }

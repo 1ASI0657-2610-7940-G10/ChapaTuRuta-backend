@@ -33,7 +33,8 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 .email(request.email())
                 .password(request.password())
                 .role(request.role())
-                .companyId(request.companyId()) // Guardar el Company ID
+                .companyId(request.companyId())
+                .routeId(request.routeId())
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -44,6 +45,8 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 savedUser.getName(),
                 savedUser.getEmail(),
                 savedUser.getRole(),
+                savedUser.getCompanyId(),
+                savedUser.getRouteId(),
                 savedUser.getCreatedAt()
         );
     }

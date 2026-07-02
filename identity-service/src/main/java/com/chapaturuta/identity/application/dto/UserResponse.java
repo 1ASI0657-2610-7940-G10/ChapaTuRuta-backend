@@ -9,5 +9,11 @@ public record UserResponse(
         String name,
         String email,
         Role role,
+        UUID companyId,
+        UUID routeId,
         LocalDateTime createdAt
-) {}
+) {
+    public UserResponse(UUID id, String name, String email, Role role, LocalDateTime createdAt) {
+        this(id, name, email, role, null, null, createdAt);
+    }
+}

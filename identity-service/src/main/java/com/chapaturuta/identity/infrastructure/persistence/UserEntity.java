@@ -37,6 +37,9 @@ public class UserEntity {
     @Column(name = "company_id")
     private UUID companyId;
 
+    @Column(name = "route_id")
+    private UUID routeId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }
