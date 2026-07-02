@@ -32,4 +32,22 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
     public boolean existsByRuc(String ruc) {
         return repository.existsByRuc(ruc);
     }
+
+    @Override
+    public void deleteById(java.util.UUID id) {
+        repository.deleteById(id);
+    }
+
+    @Override
+    public java.util.Optional<Company> findByManagerId(java.util.UUID managerId) {
+        return repository.findByManager_Id(managerId).map(entity -> 
+            Company.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .ruc(entity.getRuc())
+                .busPhotoUrl(entity.getBusPhotoUrl())
+                .managerId(entity.getManager().getId())
+                .build()
+        );
+    }
 }

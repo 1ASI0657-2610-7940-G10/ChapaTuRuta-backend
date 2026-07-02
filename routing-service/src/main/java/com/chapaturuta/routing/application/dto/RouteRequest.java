@@ -4,5 +4,6 @@ public record RouteRequest(
         String originDistrict,
         String destinationDistrict,
         Double price,
-        Integer durationMin
+        Integer durationMin,
+        java.util.List<StopDTO> stops
 ) {}

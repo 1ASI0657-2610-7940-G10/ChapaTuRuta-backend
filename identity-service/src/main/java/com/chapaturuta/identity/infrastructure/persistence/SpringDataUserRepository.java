@@ -10,4 +10,5 @@ public interface SpringDataUserRepository extends JpaRepository<UserEntity, UUID
     Optional<UserEntity> findByEmail(String email);
 
     List<UserEntity> findByCompanyIdAndRole(UUID companyId, Role role);
+    void deleteByCompanyId(UUID companyId);
 }

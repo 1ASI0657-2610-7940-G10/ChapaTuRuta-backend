@@ -7,5 +7,6 @@ public record RouteResponse(
         String origin,
         String destination,
         Double price,
-        Integer estimatedDuration
+        Integer estimatedDuration,
+        java.util.List<StopDTO> stops
 ) {}

@@ -38,7 +38,7 @@ class ManageRouteUseCaseImplTest {
     @BeforeEach
     void setUp() {
         routeId = UUID.randomUUID();
-        validRequest = new RouteRequest("Ate", "Cercado de Lima", 3.50, 45);
+        validRequest = new RouteRequest("Ate", "Cercado de Lima", 3.50, 45, null);
         mockRoute = Route.builder()
                 .id(routeId)
                 .originDistrict("Ate")
@@ -109,7 +109,7 @@ class ManageRouteUseCaseImplTest {
                     .durationMin(30)
                     .build();
 
-            RouteRequest updateRequest = new RouteRequest("San Isidro", "Miraflores", 4.50, 30);
+            RouteRequest updateRequest = new RouteRequest("San Isidro", "Miraflores", 4.50, 30, null);
 
             when(routeRepository.findById(routeId)).thenReturn(Optional.of(mockRoute));
             when(routeRepository.save(any(Route.class))).thenReturn(updatedRoute);

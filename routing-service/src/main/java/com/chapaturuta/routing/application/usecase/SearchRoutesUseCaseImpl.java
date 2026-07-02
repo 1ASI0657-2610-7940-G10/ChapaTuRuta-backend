@@ -24,7 +24,7 @@ public class SearchRoutesUseCaseImpl implements SearchRoutesUseCase {
 
         List<Route> directRoutes = routeRepository.findRoutes(origin, destination);
         for (Route route : directRoutes) {
-            RouteResponse rr = new RouteResponse(route.getId(), route.getOriginDistrict(), route.getDestinationDistrict(), route.getPrice(), route.getDurationMin());
+            RouteResponse rr = mapToResponse(route);
             tripOptions.add(new TripOptionResponse(List.of(rr), rr.price(), rr.estimatedDuration()));
         }
 
@@ -34,8 +34,8 @@ public class SearchRoutesUseCaseImpl implements SearchRoutesUseCase {
         for (Route leg1 : startingRoutes) {
             for (Route leg2 : endingRoutes) {
                 if (leg1.getDestinationDistrict().equalsIgnoreCase(leg2.getOriginDistrict())) {
-                    RouteResponse rr1 = new RouteResponse(leg1.getId(), leg1.getOriginDistrict(), leg1.getDestinationDistrict(), leg1.getPrice(), leg1.getDurationMin());
-                    RouteResponse rr2 = new RouteResponse(leg2.getId(), leg2.getOriginDistrict(), leg2.getDestinationDistrict(), leg2.getPrice(), leg2.getDurationMin());
+                    RouteResponse rr1 = mapToResponse(leg1);
+                    RouteResponse rr2 = mapToResponse(leg2);
 
                     Double totalPrice = leg1.getPrice() + leg2.getPrice();
                     Integer totalDuration = leg1.getDurationMin() + leg2.getDurationMin() + 5;
@@ -46,5 +46,28 @@ public class SearchRoutesUseCaseImpl implements SearchRoutesUseCase {
         }
 
         return tripOptions;
+    }
+
+    private RouteResponse mapToResponse(Route route) {
+        List<com.chapaturuta.routing.application.dto.StopDTO> stopDTOs = null;
+        if (route.getStops() != null) {
+            stopDTOs = route.getStops().stream().map(s -> new com.chapaturuta.routing.application.dto.StopDTO(
+                    s.getId(),
+                    s.getName(),
+                    s.getLatitude(),
+                    s.getLongitude(),
+                    s.getAddress(),
+                    s.getStopOrder()
+            )).collect(java.util.stream.Collectors.toList());
+        }
+
+        return new RouteResponse(
+                route.getId(),
+                route.getOriginDistrict(),
+                route.getDestinationDistrict(),
+                route.getPrice(),
+                route.getDurationMin(),
+                stopDTOs
+        );
     }
 }

@@ -57,6 +57,11 @@ public class UserRepositoryAdapter implements UserRepository {
                 .toList();
     }
 
+    @Override
+    public void deleteByCompanyId(UUID companyId) {
+        repository.deleteByCompanyId(companyId);
+    }
+
     private User toModel(UserEntity entity) {
         return User.builder()
                 .id(entity.getId())

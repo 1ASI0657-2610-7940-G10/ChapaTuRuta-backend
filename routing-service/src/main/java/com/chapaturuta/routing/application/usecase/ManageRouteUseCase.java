@@ -35,6 +35,16 @@ class ManageRouteUseCaseImpl implements ManageRouteUseCase {
                 .durationMin(request.durationMin())
                 .build();
 
+        if (request.stops() != null) {
+            newRoute.setStops(request.stops().stream().map(s -> com.chapaturuta.routing.domain.model.RouteStop.builder()
+                    .name(s.name())
+                    .latitude(s.latitude())
+                    .longitude(s.longitude())
+                    .address(s.address())
+                    .stopOrder(s.stopOrder())
+                    .build()).collect(Collectors.toList()));
+        }
+
         Route savedRoute = routeRepository.save(newRoute);
         return mapToResponse(savedRoute);
     }
@@ -69,12 +79,25 @@ class ManageRouteUseCaseImpl implements ManageRouteUseCase {
     }
 
     private RouteResponse mapToResponse(Route route) {
+        List<com.chapaturuta.routing.application.dto.StopDTO> stopDTOs = null;
+        if (route.getStops() != null) {
+            stopDTOs = route.getStops().stream().map(s -> new com.chapaturuta.routing.application.dto.StopDTO(
+                    s.getId(),
+                    s.getName(),
+                    s.getLatitude(),
+                    s.getLongitude(),
+                    s.getAddress(),
+                    s.getStopOrder()
+            )).collect(Collectors.toList());
+        }
+
         return new RouteResponse(
                 route.getId(),
                 route.getOriginDistrict(),
                 route.getDestinationDistrict(),
                 route.getPrice(),
-                route.getDurationMin()
+                route.getDurationMin(),
+                stopDTOs
         );
     }
 }

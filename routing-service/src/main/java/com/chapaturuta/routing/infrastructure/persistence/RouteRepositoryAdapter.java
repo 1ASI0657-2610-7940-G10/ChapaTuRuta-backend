@@ -34,23 +34,50 @@ public class RouteRepositoryAdapter implements RouteRepository {
     }
 
     private Route toModel(RouteEntity entity) {
-        return Route.builder()
+        Route route = Route.builder()
                 .id(entity.getId())
                 .originDistrict(entity.getOriginDistrict())
                 .destinationDistrict(entity.getDestinationDistrict())
                 .price(entity.getPrice())
                 .durationMin(entity.getDurationMin())
                 .build();
+
+        if (entity.getStops() != null) {
+            route.setStops(entity.getStops().stream().map(s -> com.chapaturuta.routing.domain.model.RouteStop.builder()
+                    .id(s.getId())
+                    .name(s.getName())
+                    .latitude(s.getLatitude())
+                    .longitude(s.getLongitude())
+                    .address(s.getAddress())
+                    .stopOrder(s.getStopOrder())
+                    .build()).collect(Collectors.toList()));
+        }
+
+        return route;
     }
 
     private RouteEntity toEntity(Route route) {
-        return RouteEntity.builder()
+        RouteEntity entity = RouteEntity.builder()
                 .id(route.getId())
                 .originDistrict(route.getOriginDistrict())
                 .destinationDistrict(route.getDestinationDistrict())
                 .price(route.getPrice())
                 .durationMin(route.getDurationMin())
                 .build();
+
+        if (route.getStops() != null) {
+            entity.setStops(route.getStops().stream().map(s -> com.chapaturuta.routing.infrastructure.persistence.RouteStopEntity.builder()
+                    .id(s.getId())
+                    .name(s.getName())
+                    .latitude(s.getLatitude())
+                    .longitude(s.getLongitude())
+                    .address(s.getAddress())
+                    .stopOrder(s.getStopOrder())
+                    .route(entity)
+                    .build()).collect(Collectors.toList()));
+        }
+
+        return entity;
     }
 
     @Override

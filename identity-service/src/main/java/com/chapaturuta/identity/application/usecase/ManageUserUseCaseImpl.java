@@ -5,17 +5,22 @@ import com.chapaturuta.identity.application.dto.UserUpdateRequest;
 import com.chapaturuta.identity.domain.model.Role;
 import com.chapaturuta.identity.domain.model.User;
 import com.chapaturuta.identity.domain.repository.UserRepository;
+import com.chapaturuta.identity.domain.repository.CompanyRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
+import com.chapaturuta.identity.domain.model.Company;
 
 @Service
 public class ManageUserUseCaseImpl implements ManageUserUseCase {
 
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
 
-    public ManageUserUseCaseImpl(UserRepository userRepository) {
+    public ManageUserUseCaseImpl(UserRepository userRepository, CompanyRepository companyRepository) {
         this.userRepository = userRepository;
+        this.companyRepository = companyRepository;
     }
 
     @Override
@@ -42,10 +47,18 @@ public class ManageUserUseCaseImpl implements ManageUserUseCase {
     }
 
     @Override
+    @Transactional
     public void deleteUser(UUID userId) {
-        if (userRepository.findById(userId).isEmpty()) {
-            throw new IllegalArgumentException("Usuario no encontrado.");
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado."));
+                
+        if (user.getRole() == Role.MANAGER) {
+            companyRepository.findByManagerId(userId).ifPresent(company -> {
+                userRepository.deleteByCompanyId(company.getId());
+                companyRepository.deleteById(company.getId());
+            });
         }
+        
         userRepository.deleteById(userId);
     }
 

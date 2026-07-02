@@ -30,4 +30,7 @@ public class RouteEntity {
 
     @Column(name = "duration_min", nullable = false)
     private Integer durationMin;
+
+    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<RouteStopEntity> stops;
 }
