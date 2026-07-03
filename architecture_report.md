@@ -1,70 +1,73 @@
-﻿# Informe de Arquitectura: ChapaTuRuta
+# Informe de Arquitectura: ChapaTuRuta
 
 ## 1. Visión General de la Arquitectura
-El sistema **ChapaTuRuta** está diseñado utilizando una **Arquitectura de Microservicios**. Esta elección permite escalar diferentes partes del sistema de manera independiente (por ejemplo, el servicio de rastreo en tiempo real requiere más recursos que el de identidad) y facilita el desarrollo paralelo.
+El sistema **ChapaTuRuta** ha sido diseñado adoptando una **Arquitectura de Microservicios (Cloud-Native)** desde su concepción. 
+
+**Decisión frente a la Arquitectura Monolítica:**
+Se descartó inicialmente construir la solución como un Monolito debido a la gran asimetría de escalabilidad entre los diferentes dominios del negocio. Mientras que la autenticación de usuarios (*Identity Service*) presenta una carga predecible, la recepción continua de coordenadas GPS de los vehículos (*Tracking Service*) requiere una altísima capacidad de concurrencia y escalabilidad horizontal. Al empezar como un ecosistema fragmentado, maximizamos los **beneficios** de los microservicios (despliegue independiente, aislamiento de fallos, bases de datos separadas) y evitamos a futuro el costoso proceso de *Monolithic decomposition* o *Refactoring*, asumiendo de forma proactiva sus **desventajas** (complejidad transaccional y monitoreo distribuido).
 
 ### Microservicios Principales:
-1. **API Gateway**: Actúa como el punto de entrada único para todas las solicitudes de los clientes (frontend/móvil). Se encarga del enrutamiento de peticiones, manejo de CORS y validación inicial de tokens JWT.
-2. **Identity Service**: Gestiona la autenticación, autorización (RBAC: Manager, Driver, Passenger) y el registro de usuarios y empresas. Genera los tokens JWT.
-3. **Routing Service**: Administra las rutas estáticas y paraderos. Gestiona la información geográfica y el orden de los paraderos.
-4. **Tracking Service**: Maneja la ubicación en tiempo real de los vehículos, check-ins en paraderos y cálculo de tiempos de llegada estimados (ETA).
+1. **API Gateway**: Actúa como el punto de entrada único para todas las solicitudes de los clientes (SPA frontend). Se encarga del enrutamiento de peticiones, manejo de CORS y validación inicial de tokens JWT.
+2. **Identity Service**: Gestiona la autenticación, autorización (RBAC: Manager, Driver, Passenger) y el registro de usuarios y empresas.
+3. **Routing Service**: Administra las rutas estáticas y paraderos, gestionando la información geográfica estructural.
+4. **Tracking Service**: Maneja la ubicación en tiempo real de los vehículos, los check-ins en paraderos y el cálculo de tiempos de llegada estimados (ETA).
 
 ---
 
 ## 2. Decisiones de Arquitectura
 
-### Arquitectura Hexagonal (Ports and Adapters)
-Dentro de cada microservicio, se implementa la Arquitectura Hexagonal para asegurar un alto desacoplamiento entre la lógica de negocio y las tecnologías externas.
+### Arquitectura Hexagonal y Clean Architecture
+Dentro de cada microservicio, se implementa de manera estricta la **Arquitectura Hexagonal (Ports and Adapters)** alineada con los principios de **Clean Architecture**. Esto asegura un alto desacoplamiento entre la lógica de negocio y las tecnologías externas.
 
-- **Capa de Dominio (Domain)**: Contiene las entidades del negocio (ej. `User`, `Route`, `Location`) y las interfaces (Puertos) de repositorios. No tiene dependencias de frameworks externos (como Spring o JPA).
-- **Capa de Aplicación (Application / Use Cases)**: Orquesta la lógica de negocio utilizando los puertos del dominio. Aquí residen servicios como `RegisterUserUseCase` o `ManageRouteUseCase`.
-- **Capa de Infraestructura (Infrastructure)**: Implementa los puertos (Adaptadores). Contiene los repositorios JPA (`RouteRepositoryAdapter`), Controladores REST (`UserController`), configuraciones de seguridad y conexiones a bases de datos o brokers de mensajes.
+- **Capa de Dominio (Domain)**: Contiene las entidades del negocio puras y las interfaces (Puertos). Al no depender de frameworks externos (como Spring o JPA), permite realizar *Pruebas Unitarias exhaustivas (Testing de microservicios)* validando reglas de negocio sin infraestructura.
+- **Capa de Aplicación (Use Cases)**: Orquesta la lógica de negocio consumiendo los puertos.
+- **Capa de Infraestructura (Adapters)**: Contiene los repositorios JPA, Controladores REST, y conexiones a Message Brokers.
 
-### Patrones Utilizados
+### Patrones de Microservicios Aplicados
 - **API Gateway Pattern**: Centraliza el acceso y la seguridad perimetral.
-- **Database per Service**: Cada microservicio (Identity, Routing) tiene su propia base de datos (o esquema lógico separado) en PostgreSQL, garantizando autonomía de datos.
-- **Token-based Authentication (JWT)**: `Identity Service` emite tokens firmados y el `API Gateway` / microservicios los validan, permitiendo autenticación sin estado (stateless).
-- **Publish-Subscribe / Asynchronous Messaging**: Usado para actualizaciones en tiempo real.
+- **Database per Service**: Cada microservicio (Identity, Routing) tiene su propia base de datos (o esquema lógico aislado), garantizando completa autonomía y evitando cuellos de botella compartidos.
+- **Transacciones Distribuidas y Sagas (Coreografía)**: Debido a la separación de bases de datos, las operaciones que involucran a múltiples microservicios evitan bloqueos sincrónicos y utilizan el **Patrón Saga**. Esto se logra emitiendo eventos asíncronos que permiten la *consistencia eventual (Eventual Consistency)* y la ejecución de transacciones compensatorias en caso de fallos.
 
 ---
 
-## 3. Uso de Redis y RabbitMQ en el Tracking Service
+## 3. Manejo de Datos: CQRS y Event Sourcing
 
-El rastreo en tiempo real de los vehículos es un desafío de alta concurrencia. Para ello, se emplean dos tecnologías clave:
+El rastreo en tiempo real representa el mayor desafío algorítmico y de datos. Para ello, se emplean patrones avanzados de arquitectura guiados por eventos (**Event-Driven Architecture**):
 
-### RabbitMQ (Mensajería Asíncrona)
-- **Propósito**: Actúa como un *Message Broker*. Cuando el frontend del conductor emite una actualización de ubicación (Check-in o GPS tracking), la petición se encola en RabbitMQ.
-- **Ventaja**: Evita sobrecargar la base de datos principal con escrituras continuas. Permite procesar picos de actualizaciones geográficas de manera asíncrona, encolándolas de forma segura hasta que el servicio de rastreo pueda procesarlas y guardarlas en caché o base de datos.
+### CQRS (Command Query Responsibility Segregation)
+En el *Tracking Service*, hemos separado drásticamente los modelos de escritura y lectura:
+- **Modelo de Comando (Write)**: Cuando un conductor emite su ubicación GPS, la escritura no va directamente a una base de datos relacional. La petición se encola asíncronamente en un *Message Broker* (**RabbitMQ**). Esto evita saturar el sistema de almacenamiento con escrituras concurrentes intensivas.
+- **Modelo de Consulta (Read)**: Un worker procesa los mensajes de RabbitMQ y actualiza el estado temporal en **Redis**, una base de datos en memoria clave-valor. Cuando un pasajero consulta "¿A qué hora llega mi bus?", el sistema realiza una lectura a velocidad sub-milisegundo directamente desde Redis, aislada del tráfico de escritura.
 
-### Redis (Caché y Real-time)
-- **Propósito**: Base de datos en memoria clave-valor.
-- **Uso**: Almacena la *última ubicación conocida* de cada conductor y el estado temporal de los paraderos. 
-- **Ventaja**: Las lecturas del pasajero (que consulta constantemente "¿dónde está mi bus?") se dirigen a Redis, proporcionando tiempos de respuesta de milisegundos en lugar de consultar costosas tablas relacionales en PostgreSQL.
+### Event Sourcing
+La transmisión de las ubicaciones GPS de los conductores asimila principios de **Event Sourcing**. Cada reporte o 'check-in' no simplemente sobrescribe el campo de "ubicación actual", sino que es concebido como un evento inmutable añadido a un log histórico. Esto permite auditar la ruta seguida por el vehículo, reconstruir incidentes pasados y medir la demanda en diferido.
 
 ---
 
 ## 4. Elección de Tecnologías
-
-- **Backend Framework**: **Spring Boot 3 (Java 21)**. Elegido por su robustez, excelente ecosistema para microservicios (Spring Cloud Gateway, Spring Data JPA) y fuerte tipado.
-- **Frontend**: **React.js**. Utilizado para las interfaces web del Manager, Driver y Passenger. Elegido por su reactividad y gran ecosistema de librerías.
-- **Base de Datos Relacional**: **PostgreSQL**. Utilizado para datos estructurados, relaciones complejas y transaccionales (Usuarios, Rutas, Paraderos).
-- **Mapas y Geocoding**: **Mapbox GL JS**. Integrado en el frontend para renderizar mapas interactivos, trazar rutas personalizadas y visualización en tiempo real con alto rendimiento.
-- **Gestión de Dependencias y Build**: Maven.
+- **Backend Framework**: **Spring Boot 3 (Java 21)** (Soporte nativo para Virtual Threads, ideal para alta concurrencia).
+- **Frontend**: **React.js** (Interfaces reactivas) y **Mapbox GL JS** (Renderizado WebGL de alto rendimiento para los mapas).
+- **Relacional**: **PostgreSQL** (Persistencia estructurada y transaccional).
+- **Memoria y Caché**: **Redis** (Consultas masivas en tiempo real).
+- **Message Broker**: **RabbitMQ** (Integración asíncrona mediante Publish-Subscribe).
 
 ---
 
-## 5. Deploy Configurado y Uso de Docker
+## 5. Despliegue, DevOps y Estrategia Cloud
 
 ### Dockerización
-El sistema está completamente contenerizado. Cada microservicio cuenta con su propio `Dockerfile` que define un proceso de construcción en dos fases (Multi-stage build):
-1. **Fase de Build**: Compila el código Java usando Maven.
-2. **Fase de Runtime**: Ejecuta el `.jar` compilado sobre una imagen ligera de Java (`eclipse-temurin:21-jre-alpine` o similar), reduciendo el tamaño de la imagen final y mejorando la seguridad.
+Se implementa una estrategia nativa de contenedores (*Containerized Deployment*). Cada microservicio utiliza *Multi-stage builds* en su `Dockerfile`.
+1. **Fase de Build**: Compila con Maven de forma aislada.
+2. **Fase de Runtime**: Ejecuta sobre imágenes ligeras (`eclipse-temurin:21-jre-alpine`), reduciendo drásticamente la superficie de ataque y el tamaño.
 
-Para desarrollo local, se dispone de un archivo `docker-compose.yml` que levanta las bases de datos (PostgreSQL, Redis, RabbitMQ) y, opcionalmente, los servicios interconectados.
+### Serverless Architecture y Multi-Cloud
+En lugar de aprovisionar infraestructura tradicional (IaaS, ej. instancias EC2 manuales) que exige mantenimiento operativo, la solución de despliegue se apoya en servicios en la nube gestionados (**Serverless Platform Categories**), conformando un entorno **Multi-Cloud**:
 
-### Despliegue en la Nube (Render)
-El despliegue está optimizado para plataformas PaaS como **Render**.
-- **Web Services**: Cada microservicio se despliega como un "Web Service" independiente.
-- **Variables de Entorno (Environment Variables)**: La configuración de conexiones (DB URL, Redis URL, JWT Secret) se inyecta mediante variables de entorno de Render, evitando hardcodear credenciales en el código fuente.
-- **Sincronización de Base de Datos**: Spring Data JPA (`ddl-auto=update` o migraciones SQL manuales en el arranque) asegura que la estructura de la base de datos en la nube esté sincronizada con las entidades de código de la rama `develop`.
+- **PaaS (Platform as a Service)**: Usamos **Render.com** para desplegar los contenedores Docker de Spring Boot. Render provee orquestación, auto-escalado horizontal y balanceo de carga sin preocuparnos por el sistema operativo.
+- **BaaS (Backend as a Service)**: La persistencia de datos delega la gestión a bases de datos *Serverless*:
+  - **Supabase** para PostgreSQL (Escalamiento automático de conexiones JDBC).
+  - **Upstash** para Redis (Facturación por request y despliegue distribuido).
+  - **CloudAMQP** para RabbitMQ (Message broker as a Service).
 
+### Infrastructure as Code (IaC) - Trabajo Futuro
+Actualmente, la infraestructura Multi-Cloud (Render, Supabase, Upstash) está provisionada mediante configuración declarativa desde los paneles de los proveedores. Como evolución en la *Gestión de la Configuración del Entorno*, el próximo paso arquitectónico incluye adoptar **Infrastructure as Code (IaC)** mediante herramientas como **Terraform**. Esto permitirá versionar la infraestructura como código, facilitando la replicación exacta de entornos (Desarrollo, QA, Producción) y agilizando la recuperación ante desastres de manera automatizada.
