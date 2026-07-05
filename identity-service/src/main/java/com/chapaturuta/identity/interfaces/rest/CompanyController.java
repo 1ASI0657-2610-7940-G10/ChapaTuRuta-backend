@@ -20,12 +20,15 @@ import java.util.UUID;
 public class CompanyController {
 
     private final RegisterCompanyUseCase registerCompanyUseCase;
-    private final ManageUserUseCase manageUserUseCase; // VARIABLE FALTANTE
+    private final ManageUserUseCase manageUserUseCase;
+    private final com.chapaturuta.identity.application.usecase.GetCompanyUseCase getCompanyUseCase;
 
-    // CONSTRUCTOR CORREGIDO
-    public CompanyController(RegisterCompanyUseCase registerCompanyUseCase, ManageUserUseCase manageUserUseCase) {
+    public CompanyController(RegisterCompanyUseCase registerCompanyUseCase, 
+                             ManageUserUseCase manageUserUseCase,
+                             com.chapaturuta.identity.application.usecase.GetCompanyUseCase getCompanyUseCase) {
         this.registerCompanyUseCase = registerCompanyUseCase;
         this.manageUserUseCase = manageUserUseCase;
+        this.getCompanyUseCase = getCompanyUseCase;
     }
 
     @PostMapping("/register")
@@ -44,5 +47,16 @@ public class CompanyController {
     public ResponseEntity<List<UserResponse>> getCompanyDrivers(@PathVariable UUID companyId) {
         List<UserResponse> drivers = manageUserUseCase.getDriversByCompany(companyId);
         return ResponseEntity.ok(drivers);
+    }
+
+    @GetMapping("/manager/{managerId}")
+    @Operation(summary = "Obtener empresa por Manager ID", description = "Devuelve la empresa vinculada a un manager")
+    public ResponseEntity<?> getCompanyByManagerId(@PathVariable UUID managerId) {
+        try {
+            CompanyResponse response = getCompanyUseCase.getCompanyByManagerId(managerId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
     }
 }
