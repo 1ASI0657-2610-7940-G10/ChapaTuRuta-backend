@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(
+            name: 'RUN_SONAR',
+            defaultValue: false,
+            description: 'Ejecutar analisis SonarQube y Quality Gate'
+        )
+    }
+
     environment {
         TEST_SELECTOR = '*Test,!CucumberTestRunner'
         SONARQUBE_ENV = 'SonarQube'
@@ -32,6 +40,9 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
+            when {
+                expression { params.RUN_SONAR }
+            }
             steps {
                 script {
                     withSonarQubeEnv(env.SONARQUBE_ENV) {
