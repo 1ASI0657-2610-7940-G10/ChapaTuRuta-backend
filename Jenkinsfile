@@ -45,22 +45,14 @@ pipeline {
             }
             steps {
                 script {
-                    withSonarQubeEnv(env.SONARQUBE_ENV) {
-                        services().each { service ->
+                    services().each { service ->
+                        withSonarQubeEnv(env.SONARQUBE_ENV) {
                             dir(service) {
-                                runMaven(
-                                    'sonar:sonar ' +
-                                    "-Dsonar.projectKey=chapaturuta-${service} " +
-                                    "-Dsonar.projectName=\"ChapaTuRuta ${service}\" " +
-                                    '-Dsonar.sources=src/main/java ' +
-                                    '-Dsonar.tests=src/test/java ' +
-                                    '-Dsonar.junit.reportPaths=target/surefire-reports ' +
-                                    '-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml'
-                                )
+                                runSonarAnalysis(service)
                             }
-                            timeout(time: 10, unit: 'MINUTES') {
-                                waitForQualityGate abortPipeline: true
-                            }
+                        }
+                        timeout(time: 10, unit: 'MINUTES') {
+                            waitForQualityGate abortPipeline: true
                         }
                     }
                 }
@@ -79,4 +71,17 @@ def runMaven(String goals) {
     } else {
         bat "mvnw.cmd -B ${goals}"
     }
+}
+
+def runSonarAnalysis(String service) {
+    String goals =
+        'sonar:sonar ' +
+        "-Dsonar.projectKey=chapaturuta-${service} " +
+        "-Dsonar.projectName=\"ChapaTuRuta ${service}\" " +
+        '-Dsonar.sources=src/main/java ' +
+        '-Dsonar.tests=src/test/java ' +
+        '-Dsonar.junit.reportPaths=target/surefire-reports ' +
+        '-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml'
+
+    runMaven(goals)
 }
