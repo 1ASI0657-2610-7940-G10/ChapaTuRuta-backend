@@ -58,9 +58,13 @@ public class RouteController {
 
     @PostMapping
     @Operation(summary = "Crear nueva ruta", description = "Agrega una nueva ruta al catálogo")
-    public ResponseEntity<RouteResponse> createRoute(@RequestBody RouteRequest request) {
-        RouteResponse response = manageRouteUseCase.createRoute(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    public ResponseEntity<?> createRoute(@RequestBody RouteRequest request) {
+        try {
+            RouteResponse response = manageRouteUseCase.createRoute(request);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PutMapping("/{id}")

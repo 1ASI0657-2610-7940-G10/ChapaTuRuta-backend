@@ -36,6 +36,8 @@ class ManageRouteUseCaseImpl implements ManageRouteUseCase {
 
     @Override
     public RouteResponse createRoute(RouteRequest request) {
+        validateRouteRequest(request);
+
         Route newRoute = Route.builder()
                 .originDistrict(request.originDistrict())
                 .destinationDistrict(request.destinationDistrict())
@@ -59,6 +61,8 @@ class ManageRouteUseCaseImpl implements ManageRouteUseCase {
 
     @Override
     public RouteResponse updateRoute(UUID id, RouteRequest request) {
+        validateRouteRequest(request);
+
         Route route = routeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Ruta no encontrada"));
 
@@ -69,6 +73,21 @@ class ManageRouteUseCaseImpl implements ManageRouteUseCase {
 
         Route updatedRoute = routeRepository.save(route);
         return mapToResponse(updatedRoute);
+    }
+
+    private void validateRouteRequest(RouteRequest request) {
+        if (request.originDistrict() == null || request.originDistrict().trim().isEmpty()) {
+            throw new IllegalArgumentException("El distrito de origen es obligatorio");
+        }
+        if (request.destinationDistrict() == null || request.destinationDistrict().trim().isEmpty()) {
+            throw new IllegalArgumentException("El distrito de destino es obligatorio");
+        }
+        if (request.price() == null || request.price() <= 0) {
+            throw new IllegalArgumentException("El precio de la ruta debe ser mayor a 0");
+        }
+        if (request.durationMin() == null || request.durationMin() <= 0) {
+            throw new IllegalArgumentException("La duración de la ruta debe ser mayor a 0 minutos");
+        }
     }
 
     @Override
