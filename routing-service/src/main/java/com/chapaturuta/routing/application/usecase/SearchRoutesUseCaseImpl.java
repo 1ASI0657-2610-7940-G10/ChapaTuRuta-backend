@@ -33,7 +33,9 @@ public class SearchRoutesUseCaseImpl implements SearchRoutesUseCase {
 
         for (Route leg1 : startingRoutes) {
             for (Route leg2 : endingRoutes) {
-                if (leg1.getDestinationDistrict().equalsIgnoreCase(leg2.getOriginDistrict())) {
+                if (leg1.getDestinationDistrict() != null && 
+                    leg1.getDestinationDistrict().equalsIgnoreCase(leg2.getOriginDistrict())) {
+                    
                     RouteResponse rr1 = mapToResponse(leg1);
                     RouteResponse rr2 = mapToResponse(leg2);
 
