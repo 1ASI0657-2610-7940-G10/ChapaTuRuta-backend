@@ -19,6 +19,19 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
     @Override
     public UserResponse registerUser(UserRegistrationRequest request) {
+        if (request.name() == null || request.name().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
+        if (request.email() == null || request.email().trim().isEmpty()) {
+            throw new IllegalArgumentException("El correo es obligatorio");
+        }
+        if (request.password() == null || request.password().trim().isEmpty()) {
+            throw new IllegalArgumentException("La contraseña es obligatoria");
+        }
+        if (request.role() == null) {
+            throw new IllegalArgumentException("El rol es obligatorio");
+        }
+
         if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalArgumentException("El correo ya está registrado");
         }

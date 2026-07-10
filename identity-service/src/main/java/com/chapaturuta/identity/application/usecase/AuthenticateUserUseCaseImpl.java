@@ -33,6 +33,10 @@ public class AuthenticateUserUseCaseImpl implements AuthenticateUserUseCase {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
+        if (user.getRole() == null) {
+            throw new IllegalArgumentException("El usuario no tiene un rol asignado en la base de datos");
+        }
+
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 
         return Jwts.builder()
